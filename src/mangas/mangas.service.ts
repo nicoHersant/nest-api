@@ -38,8 +38,8 @@ export class MangasService {
     }
 
     const total = mangas.length;
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
+    const page = query.page ?? 1;    // défaut : page 1
+    const limit = query.limit ?? 10; // défaut : 10 résultats
     const start = (page - 1) * limit;
 
     return {

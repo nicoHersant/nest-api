@@ -29,16 +29,8 @@ export class MangasController {
 
   @Get()
   findAll(@Query() query: QueryMangaDto) {
-    const page = query.page ? Number(query.page) : 1;
-    const limit = query.limit ? Number(query.limit) : 10;
-
-    if (page < 1 || limit < 1 || limit > 50) {
-      throw new BadRequestException(
-        'page must be >= 1, limit must be between 1 and 50',
-      );
-    }
-
-    return this.mangasService.findAll({ ...query, page, limit });
+    // ValidationPipe (global) a déjà validé et transformé page/limit via @Type(() => Number)
+    return this.mangasService.findAll(query);
   }
 
   @Get('search')

@@ -4,9 +4,7 @@ import {
   Get,
   Delete,
   Body,
-  Headers,
   HttpCode,
-  BadRequestException,
   Request,
 } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
@@ -21,9 +19,7 @@ export class AuthController {
   @Public()
   @Post('register')
   register(@Body() body: RegisterDto) {
-    if (!body.email || !body.email.includes('@')) {
-      throw new BadRequestException('A valid email address is required');
-    }
+    // La validation de l'email est assurée par @IsEmail() dans le DTO + ValidationPipe global
     return this.authService.register(body.email);
   }
 

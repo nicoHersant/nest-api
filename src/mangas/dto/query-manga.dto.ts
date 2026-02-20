@@ -1,6 +1,28 @@
+import { IsOptional, IsString, IsInt, Min, Max, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
+import { MangaStatus } from './create-manga.dto';
+
 export class QueryMangaDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
   limit?: number;
+
+  @IsOptional()
+  @IsString()
   genre?: string;
-  status?: string;
+
+  @IsOptional()
+  @IsEnum(MangaStatus, {
+    message: 'status must be one of: ongoing, completed, hiatus',
+  })
+  status?: MangaStatus;
 }

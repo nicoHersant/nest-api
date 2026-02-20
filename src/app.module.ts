@@ -6,6 +6,7 @@ import { StorageModule } from './storage/storage.module';
 import { MangasModule } from './mangas/mangas.module';
 import { AuthModule } from './auth/auth.module';
 import { ApiKeyGuard } from './common/guards/api-key.guard';
+import { AdminGuard } from './common/guards/admin.guard';
 
 @Module({
   imports: [
@@ -24,15 +25,18 @@ import { ApiKeyGuard } from './common/guards/api-key.guard';
   ],
   controllers: [AppController],
   providers: [
-    // ThrottlerGuard appliqué globalement en premier
+    // Ordre d'exécution des guards : ThrottlerGuard → ApiKeyGuard → AdminGuard
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    // ApiKeyGuard appliqué globalement en second
     {
       provide: APP_GUARD,
       useClass: ApiKeyGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AdminGuard,
     },
   ],
 })

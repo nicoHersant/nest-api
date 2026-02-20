@@ -19,10 +19,13 @@ import { MangasService } from './mangas.service';
 import { QueryMangaDto } from './dto/query-manga.dto';
 import { CreateMangaDto } from './dto/create-manga.dto';
 import { UpdateMangaDto } from './dto/update-manga.dto';
+import { AdminOnly } from '../common/decorators/admin.decorator';
 
 @Controller('mangas')
 export class MangasController {
   constructor(private readonly mangasService: MangasService) {}
+
+  // ─── Lecture (user + admin) ──────────────────────────────────────────────
 
   @Get()
   findAll(@Query() query: QueryMangaDto) {
@@ -58,22 +61,28 @@ export class MangasController {
     res.status(200).send();
   }
 
+  // ─── Écriture (admin uniquement) ─────────────────────────────────────────
+
+  @AdminOnly()
   @Post()
   @HttpCode(201)
   create(@Body() body: CreateMangaDto) {
     return this.mangasService.create(body);
   }
 
+  @AdminOnly()
   @Put(':id')
   replace(@Param('id', ParseIntPipe) id: number, @Body() body: CreateMangaDto) {
     return this.mangasService.replace(id, body);
   }
 
+  @AdminOnly()
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateMangaDto) {
     return this.mangasService.update(id, body);
   }
 
+  @AdminOnly()
   @Delete(':id')
   @HttpCode(204)
   remove(@Param('id', ParseIntPipe) id: number) {

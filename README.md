@@ -1,7 +1,7 @@
 # MangaAPI — Cours NestJS · M2 Ingénierie Logicielle
 
-API REST professionnelle construite en NestJS, servant des données de mangas.
-Projet pédagogique progressif : chaque étape correspond à une branche git stable.
+API REST pour professionnels construite en NestJS, servant des données de mangas.
+Projet pédagogique progressif.
 
 ---
 
@@ -60,9 +60,14 @@ npm install -g @nestjs/cli
 
 ## Installation
 
+Pour consultation ultérieur si besoin.
+La suite du cour permet de construire l'api from scratch.  
+
 ```bash
 git clone <url-du-repo>
 cd manga-api
+git checkout -b prenom/nom
+git push --set-upstream
 npm install
 npm run start:dev
 ```
@@ -128,11 +133,11 @@ nest generate module storage
 nest generate service storage/storage --flat
 ```
 
-Fichiers de données créés dans `src/data/` :
+Fichiers de données a créer dans `src/data/` :
 - `mangas.json` — 50 mangas célèbres
 - `users.json` — admin pré-seedé
 
-`JsonStorageService` expose :
+`JsonStorageService` doit exposer :
 - `read<T>(filename): T` — lecture synchrone
 - `write<T>(filename, data: T): void` — écriture atomique
 
@@ -148,11 +153,11 @@ nest generate controller mangas
 nest generate service mangas
 ```
 
-Endpoints implémentés :
+Endpoints a implémenter :
 
 ```
-GET  /api/mangas            ?page=1&limit=10&genre=Action&status=completed
-GET  /api/mangas/search     ?q=naruto
+GET  /api/mangas?page=1&limit=10&genre=Action&status=completed
+GET  /api/mangas/search?q=naruto
 GET  /api/mangas/:id
 HEAD /api/mangas/:id
 ```
@@ -174,7 +179,7 @@ nest generate controller auth
 nest generate service auth
 ```
 
-Endpoints implémentés :
+Endpoints a implémenter :
 
 ```
 POST   /api/auth/register        → 201 { apiKey }
@@ -208,7 +213,7 @@ Codes HTTP couverts : `401` (clef absente), `403` (clef invalide).
 
 **Objectifs :** verbes HTTP POST/PUT/PATCH/DELETE, écriture dans le JSON.
 
-Endpoints implémentés :
+Endpoints a implémenter :
 
 ```
 POST   /api/mangas        → 201
@@ -244,7 +249,7 @@ Codes HTTP couverts : `403` (authentifié mais non autorisé).
 npm install class-validator class-transformer
 ```
 
-DTOs implémentés :
+DTOs a implémenter :
 - `CreateMangaDto` — tous les champs requis validés
 - `UpdateMangaDto` (`PartialType` de `CreateMangaDto`) — champs optionnels
 - `QueryMangaDto` — query params typés et validés
@@ -285,7 +290,7 @@ npm install @scalar/nestjs-api-reference
 - Spec OpenAPI disponible sur `/api/docs-json`
 - UI Scalar disponible sur `/api/docs`
 
-Décorateurs utilisés :
+Décorateurs a utiliser :
 - `@ApiTags()` sur les controllers
 - `@ApiOperation()`, `@ApiResponse()` sur les endpoints
 - `@ApiProperty()` sur les DTOs

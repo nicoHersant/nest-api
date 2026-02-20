@@ -1,9 +1,14 @@
 import {
   Controller,
   Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
   Head,
   Param,
   Query,
+  Body,
   ParseIntPipe,
   BadRequestException,
   HttpCode,
@@ -12,6 +17,8 @@ import {
 import type { Response } from 'express';
 import { MangasService } from './mangas.service';
 import { QueryMangaDto } from './dto/query-manga.dto';
+import { CreateMangaDto } from './dto/create-manga.dto';
+import { UpdateMangaDto } from './dto/update-manga.dto';
 
 @Controller('mangas')
 export class MangasController {
@@ -49,5 +56,27 @@ export class MangasController {
   headOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     this.mangasService.findOne(id); // lève 404 si absent
     res.status(200).send();
+  }
+
+  @Post()
+  @HttpCode(201)
+  create(@Body() body: CreateMangaDto) {
+    return this.mangasService.create(body);
+  }
+
+  @Put(':id')
+  replace(@Param('id', ParseIntPipe) id: number, @Body() body: CreateMangaDto) {
+    return this.mangasService.replace(id, body);
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateMangaDto) {
+    return this.mangasService.update(id, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    this.mangasService.remove(id);
   }
 }

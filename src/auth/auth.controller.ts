@@ -7,14 +7,18 @@ import {
   Headers,
   HttpCode,
   BadRequestException,
+  Request,
 } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
+import { Public } from '../common/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('register')
   register(@Body() body: RegisterDto) {
     if (!body.email || !body.email.includes('@')) {
@@ -24,27 +28,21 @@ export class AuthController {
   }
 
   @Get('me')
-  getMe(@Headers('x-api-key') apiKey: string) {
-    if (!apiKey) {
-      throw new BadRequestException('Header X-API-Key is required');
-    }
-    return this.authService.getMe(apiKey);
+  getMe(@Request() req: ExpressRequest) {
+    const user = (req as any).user;
+    return this.authService.getMe(user.apiKey);
   }
 
   @Post('regenerate-key')
-  regenerateKey(@Headers('x-api-key') apiKey: string) {
-    if (!apiKey) {
-      throw new BadRequestException('Header X-API-Key is required');
-    }
-    return this.authService.regenerateKey(apiKey);
+  regenerateKey(@Request() req: ExpressRequest) {
+    const user = (req as any).user;
+    return this.authService.regenerateKey(user.apiKey);
   }
 
   @Delete('account')
   @HttpCode(204)
-  deleteAccount(@Headers('x-api-key') apiKey: string) {
-    if (!apiKey) {
-      throw new BadRequestException('Header X-API-Key is required');
-    }
-    this.authService.deleteAccount(apiKey);
+  deleteAccount(@Request() req: ExpressRequest) {
+    const user = (req as any).user;
+    this.authService.deleteAccount(user.apiKey);
   }
 }

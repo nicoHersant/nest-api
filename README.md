@@ -1,7 +1,13 @@
 # MangaAPI — Cours NestJS · M2 Ingénierie Logicielle
 
-API REST professionnelle construite en NestJS, servant des données de mangas.
-Projet pédagogique progressif : chaque étape correspond à une branche git stable.
+Ce cours consiste à construire un nouveau repot git et une application NestJS permettant de fournir des données métier.  
+Le README.md contient la suite de commandes nécessaires pour construire l'application.  
+Le depot git de référence est disponible ici : https://github.com/nicoHersant/nest-api.  
+Vous y trouverez différentes branches correspondant aux étapes de construction de l'application.
+
+Objectif :
+API REST pour professionnels construite en NestJS, servant des données de mangas.
+Projet pédagogique progressif.
 
 ---
 
@@ -22,11 +28,14 @@ Projet pédagogique progressif : chaque étape correspond à une branche git sta
 ## Branches pédagogiques
 
 Chaque branche est un état stable et fonctionnel de l'application.
-En cas de blocage, récupérer la branche de l'étape courante :
+En cas de blocage, récupérer (ou copier / coller un bout de code) la branche de l'étape courante :
 
 ```bash
+git clone https://github.com/nicoHersant/nest-api.git
+cd nest-api
 git fetch origin
 git checkout step/XX-nom-etape
+npm i && npm run start:dev
 ```
 
 | Branche | Contenu |

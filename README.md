@@ -122,6 +122,8 @@ bootstrap();
 
 ```bash
 npm install @nestjs/throttler
+npm install class-validator 
+npm install class-transformer
 ```
 
 **`src/main.ts`** — prefix global, CORS, ValidationPipe :
@@ -1020,6 +1022,8 @@ X-API-Key: admin-manga-api-key-dev-only
 | 200 | OK | Lecture ou mise à jour réussie |
 | 201 | Created | Ressource créée (POST) |
 | 204 | No Content | Suppression réussie (pas de body) |
+| 301 | Redirect | Redirection permanente |
+| 307 | Redirect | Redirection temporaire (maintient du verbe HTTP) |
 | 400 | Bad Request | Paramètre ou body invalide |
 | 401 | Unauthorized | Header `X-API-Key` absent |
 | 403 | Forbidden | Clef valide mais rôle insuffisant |

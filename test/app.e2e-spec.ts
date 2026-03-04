@@ -6,8 +6,6 @@ import { AppModule } from './../src/app.module';
 import { HttpExceptionFilter } from './../src/common/filters/http-exception.filter';
 import { StorageService } from './../src/storage/storage.service';
 
-// ─── Test data ───────────────────────────────────────────────────────────────
-
 const ADMIN_KEY = 'admin-test-api-key';
 const USER_KEY = 'user-test-api-key';
 
@@ -53,14 +51,12 @@ const mockMangas = [
   },
 ];
 
-// ─── Shared mock (reset between tests) ───────────────────────────────────────
 
 const mockStorageService = {
   read: jest.fn(),
   write: jest.fn(),
 };
 
-// ─── Test suite ───────────────────────────────────────────────────────────────
 
 describe('MangaAPI (e2e)', () => {
   let app: INestApplication<App>;

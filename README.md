@@ -983,6 +983,63 @@ src/
 
 ---
 
+## Tests
+
+### Lancer les tests unitaires
+
+```bash
+# Tous les tests unitaires (services, controllers, guards, filters)
+npm test
+
+# Mode watch — relance automatiquement à chaque modification
+npm run test:watch
+
+# Rapport de couverture (génère le dossier coverage/)
+npm run test:cov
+```
+
+### Lancer les tests end-to-end (e2e)
+
+```bash
+# Tests e2e — démarre l'application complète avec des données mockées
+npm run test:e2e
+```
+
+### Couverture de code
+
+```bash
+# Génère le rapport HTML dans coverage/lcov-report/index.html
+npm run test:cov
+```
+
+Après exécution, ouvrir `coverage/lcov-report/index.html` dans un navigateur pour visualiser la couverture ligne par ligne.
+
+### Structure des fichiers de test
+
+```
+src/
+├── app.controller.spec.ts               ← healthCheck, demoError
+├── storage/
+│   └── storage.service.spec.ts          ← read, write (fs mocké)
+├── auth/
+│   ├── auth.service.spec.ts             ← register, getMe, regenerateKey, deleteAccount, findByApiKey
+│   └── auth.controller.spec.ts          ← délégation vers AuthService
+├── mangas/
+│   ├── mangas.service.spec.ts           ← findAll, search, findOne, create, replace, update, remove
+│   └── mangas.controller.spec.ts        ← délégation + validation search
+└── common/
+    ├── guards/
+    │   ├── api-key.guard.spec.ts        ← public routes, 401, 403, attache req.user
+    │   └── admin.guard.spec.ts          ← @AdminOnly(), rôle user vs admin
+    └── filters/
+        └── http-exception.filter.spec.ts ← format d'erreur HTTP et non-HTTP
+
+test/
+└── app.e2e-spec.ts                      ← tests d'intégration sur toutes les routes
+```
+
+---
+
 ## Tester l'API
 
 ### Compte admin (disponible dès le démarrage)

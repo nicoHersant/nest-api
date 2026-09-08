@@ -62,6 +62,10 @@ nest --version   # doit afficher 11.x
 
 > ⚠️ Si `nest --version` affiche `12.x`, désinstalle (`npm uninstall -g @nestjs/cli`) et réinstalle avec `@nestjs/cli@11` — sinon `nest new` proposera un scaffold CommonJS/ESM différent de celui décrit dans ce README, et les étapes ne correspondront plus.
 
+### Client HTTP pour tester l'API
+
+Installe [Postman](https://www.postman.com/downloads/) (ou une alternative équivalente : [Insomnia](https://insomnia.rest/download), l'extension VS Code [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client), `curl` en ligne de commande...) pour envoyer des requêtes à l'API au fur et à mesure que tu avances — tu en auras besoin dès l'Étape 3 pour vérifier `GET /mangas`, et le détail des routes à tester par étape est donné dans chaque encart "Codes HTTP couverts". Le workflow complet est détaillé en fin de document (section "Tester l'API").
+
 ### Note de version
 
 Au moment d'écrire ce cours, **Node.js 24 LTS** est devenu la version LTS active (Node 22 est passée en maintenance) et **NestJS 12** est sorti. On reste volontairement sur Node 22 / NestJS 11 pour cette session : la stack a été testée de bout en bout sur ces versions, et NestJS 12 impose des contraintes de version Node plus strictes pour les générateurs du CLI (`nest generate`), ce qui aurait pu bloquer certains postes en plein cours. Rien n'empêche d'explorer la 12 après le cours — les concepts appris (modules, guards, DTOs, exception filters...) restent valables, seule la configuration change.
@@ -85,17 +89,13 @@ L'API sera disponible sur `http://localhost:3000/api` une fois l'Étape 1 en pla
 ## Comment lire ce README
 
 - Les extraits `typescript` donnent des **signatures** (nom de classe/méthode, paramètres, décorateurs), jamais le corps d'une méthode métier.
-- Les **consignes** en français sous chaque extrait décrivent le comportement attendu : cas d'erreur, codes HTTP, règles de calcul.
+- Les **consignes** sous chaque extrait décrivent le comportement attendu : cas d'erreur, codes HTTP, règles de calcul.
 - Les commandes `nest generate` sont à taper toi-même — ne copie pas de fichier tout fait.
 - Quand un fichier n'est pas montré (ex. `*.module.ts`), c'est que le CLI le génère déjà correctement : contente-toi de brancher les bons imports.
 
 ---
 
 ## Rappels techniques — Node.js / TypeScript
-
-*(≈ 30-45 min, en ouverture de séance)*
-
-Ce cours suppose une pratique de Node.js/TypeScript en entreprise, pas un cours dédié suivi en formation. Les constructions ci-dessous reviennent constamment dans le code de ce cours — si tu les reconnais déjà, passe directement à l'Étape 0.
 
 **Classes et décorateurs** — toute l'architecture NestJS repose là-dessus :
 
@@ -106,7 +106,10 @@ export class ExempleService {
 }
 ```
 
-`@Injectable()` est un **décorateur** : une fonction appliquée à une classe, qui attache une information exploitable par le framework (ici : "cette classe peut être injectée ailleurs"). Tu en croiseras beaucoup (`@Controller()`, `@Module()`, `@Get()`...). `private readonly autreService: AutreService` dans le constructeur est un raccourci TypeScript qui déclare *et* assigne la propriété en une seule ligne — équivalent à déclarer `private readonly autreService: AutreService;` puis faire `this.autreService = autreService;` dans le corps du constructeur.
+`@Injectable()` est un **décorateur** : une fonction appliquée à une classe, qui attache une information exploitable par le framework  
+(ici : "cette classe peut être injectée ailleurs").  
+Tu en croiseras beaucoup (`@Controller()`, `@Module()`, `@Get()`...).   `private readonly autreService: AutreService` dans le constructeur est un raccourci TypeScript qui déclare *et* assigne la propriété en une seule ligne.  
+C'est équivalent à déclarer `private readonly autreService: AutreService;` puis faire `this.autreService = autreService;` dans le corps du constructeur.
 
 **Interfaces et types union** — pour typer les données métier (`Manga`, `User`...) :
 
@@ -115,7 +118,7 @@ interface Manga {
   id: number;
   title: string;
   genres: string[];
-  status: 'ongoing' | 'completed' | 'hiatus'; // type union : uniquement une de ces 3 valeurs
+  status: 'ongoing' | 'completed' | 'hiatus'; // type union (enum) : uniquement une de ces 3 valeurs
 }
 ```
 
@@ -206,7 +209,12 @@ Vérifie que `npm run start:dev` répond bien sur `http://localhost:3000` avant 
 
 > 📖 [NestJS — Modules](https://docs.nestjs.com/modules) · [Rate limiting](https://docs.nestjs.com/security/rate-limiting)
 
-NestJS organise le code autour de trois briques : les **modules** (unités de découpage, un par domaine métier), les **providers** (services injectés via le constructeur — c'est l'injection de dépendances : tu ne fais jamais `new MonService()` toi-même, c'est Nest qui construit l'instance et te la fournit) et les **controllers** (point d'entrée HTTP qui délègue aux providers). Cette étape ne touche encore à aucune de ces trois briques métier : elle configure uniquement le comportement global de l'application au démarrage (bootstrap).
+NestJS organise le code autour de trois briques :  
+les **modules** (unités de découpage, un par domaine métier),  
+les **providers** (services injectés via le constructeur — c'est l'injection de dépendances : tu ne fais jamais `new MonService()` toi-même, c'est Nest qui construit l'instance et te la fournit),  
+les **controllers** (point d'entrée HTTP qui délègue aux providers).  
+
+Cette étape ne touche encore à aucune de ces trois briques métier : elle configure uniquement le comportement global de l'application au démarrage (bootstrap).
 
 ```bash
 npm install @nestjs/throttler
@@ -229,8 +237,6 @@ npm run start:dev
 # GET http://localhost:3000/api → 404 attendu (pas encore de route déclarée)
 ```
 
-> ⚠️ Ne pose pas encore de `ValidationPipe` ici : le concept est traité à l'Étape 8, avec les paquets qui vont avec. Un `ValidationPipe` posé maintenant sans `class-validator` installé fait planter le démarrage de l'application.
-
 ---
 
 ### Étape 2 — Stockage JSON
@@ -244,7 +250,8 @@ nest generate service storage/storage --flat
 
 **`src/storage/storage.module.ts`** — rends le module `@Global()` pour que `StorageService` soit injectable partout sans import explicite.
 
-> Normalement, pour injecter un provider d'un module A dans un module B, il faut explicitement `exports` côté A et `imports` côté B — c'est ce qui permet à Nest de savoir quels modules dépendent de quoi. `@Global()` est une exception volontaire à cette règle, réservée aux services vraiment transverses (stockage, config, logger) : à utiliser avec parcimonie, pas par défaut.
+> Normalement, pour injecter un provider d'un module A dans un module B, il faut explicitement `exports` côté A et `imports` côté B.  
+> C'est ce qui permet à Nest de savoir quels modules dépendent de quoi. `@Global()` est une exception volontaire à cette règle, réservée aux services vraiment transverses (stockage, config, logger) : à utiliser avec parcimonie, pas par défaut.
 
 **`src/storage/storage.service.ts`** — signatures à implémenter :
 
@@ -262,7 +269,7 @@ Consignes :
 - `read` : lit le fichier `filename` dans `dataDir` en synchrone et retourne le contenu parsé.
 - `write` : sérialise `data` en JSON indenté et écrit dans le fichier (aussi en synchrone).
 
-> ⚠️ **Piège NestJS — assets non copiés dans `dist/`**
+> Attention **Piège NestJS — les assets ne sont pas copiés dans `dist/`** lors du build
 > Par défaut, NestJS ne copie pas les fichiers non-TypeScript lors de la compilation.
 > `__dirname` pointe vers `dist/storage/` : sans configuration, `dist/data/` n'existe pas → **erreur au premier appel qui lit un fichier**.
 >
@@ -291,8 +298,8 @@ Consignes :
 ]
 ```
 
-**`src/data/mangas.json`** — crée un tableau d'au moins 50 entrées avec cette structure :
-
+**`src/data/mangas.json`** — crée un tableau de 50 entrées avec cette structure :
+(fournit en support de cours)
 ```json
 {
   "id": 1,
@@ -336,7 +343,7 @@ export class MangasService {
 
 Consignes :
 - `findAll` : applique les filtres `genre` (recherche insensible à la casse dans le tableau `genres`) et `status` (égalité stricte), puis pagine avec `page`/`limit` (valeurs par défaut à choisir). Retourne `{ data, total, page, limit }`.
-- `findOne` : lève une `NotFoundException` si l'id n'existe pas → 404.
+- `findOne` : lève une `NotFoundException` si l'id n'existe pas (404).
 - `search` : filtre sur `title`, `author` et `synopsis`, recherche insensible à la casse.
 
 **`src/mangas/dto/query-manga.dto.ts`** — classe simple pour l'instant (pas de décorateurs de validation avant l'Étape 8) :

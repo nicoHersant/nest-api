@@ -1,10 +1,10 @@
 # MangaAPI — Cours NestJS · Bac+3
 
-Ce cours consiste à construire une application NestJS permettant de fournir des données métier via une API REST professionnelle.
+Ce cours consiste à construire une application NestJS permettant de fournir des données métier via une API REST professionnelle.  
 Le README consigne chaque étape avec les commandes CLI à exécuter, les signatures et consignes à implémenter, et les liens vers la documentation officielle NestJS.
 
-> **Important** : ce document ne contient pas de corrections toutes faites. Chaque étape donne les signatures, les décorateurs attendus et les règles métier — à toi d'écrire le corps des méthodes.
-> En cas de blocage réel, ton formateur peut débloquer une branche de correction pendant la séance — elle n'est pas communiquée à l'avance.
+> **Important** : ce document ne contient pas de corrections toutes faites. Chaque étape donne les éléments attendus et les règles à suivre — à toi d'écrire le corps des méthodes.
+> En cas de blocage réel, une branche de correction est disponible — elle n'est pas communiquée à l'avance.
 
 ---
 
@@ -46,14 +46,25 @@ Chaque étape correspond à un objectif fonctionnel. Garde cette table sous les 
 
 ## Prérequis
 
-```bash
-node --version   # v22.x
-npm --version    # v10.x
-nest --version   # v11.x
+Ce cours est pinné sur **Node.js 22 LTS** et **NestJS 11** — versions précises, pas juste "la dernière en date" (voir la note de version juste après).
 
-# Installer le CLI NestJS globalement si besoin
-npm install -g @nestjs/cli
+```bash
+node --version   # v22.x — si besoin, installe/bascule avec nvm :
+                  #   nvm install 22 && nvm use 22
+
+npm --version    # v10.x
+
+# Installe le CLI en version 11 explicitement : "npm install -g @nestjs/cli"
+# sans version installerait la dernière (12.x), incompatible avec ce cours.
+npm install -g @nestjs/cli@11
+nest --version   # doit afficher 11.x
 ```
+
+> ⚠️ Si `nest --version` affiche `12.x`, désinstalle (`npm uninstall -g @nestjs/cli`) et réinstalle avec `@nestjs/cli@11` — sinon `nest new` proposera un scaffold CommonJS/ESM différent de celui décrit dans ce README, et les étapes ne correspondront plus.
+
+### Note de version
+
+Au moment d'écrire ce cours, **Node.js 24 LTS** est devenu la version LTS active (Node 22 est passée en maintenance) et **NestJS 12** est sorti. On reste volontairement sur Node 22 / NestJS 11 pour cette session : la stack a été testée de bout en bout sur ces versions, et NestJS 12 impose des contraintes de version Node plus strictes pour les générateurs du CLI (`nest generate`), ce qui aurait pu bloquer certains postes en plein cours. Rien n'empêche d'explorer la 12 après le cours — les concepts appris (modules, guards, DTOs, exception filters...) restent valables, seule la configuration change.
 
 ---
 

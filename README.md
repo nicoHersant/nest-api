@@ -175,6 +175,44 @@ export class MangasService { }
 import { MangasService } from './mangas.service';
 ```
 
+**Méthodes intégrées utilisées dans ce cours** — sur les chaînes et les tableaux, sans bibliothèque externe :
+
+Sur les chaînes (`string`) :
+
+```typescript
+const term = q.toLowerCase();                 // normalise la casse, pour comparer sans tenir compte de Maj/min
+title.toLowerCase().includes(term);            // includes() : la sous-chaîne est-elle présente ?
+if (!q || q.trim().length === 0) { /* ... */ } // trim() : retire les espaces en début/fin
+```
+
+Sur les tableaux (`Array`) — celles-ci ne modifient **pas** le tableau d'origine, elles en retournent un nouveau (sauf `splice`, notée à part) :
+
+```typescript
+mangas.filter((m) => m.status === 'ongoing');        // filter() : garde les éléments qui passent le test
+users.some((u) => u.email === email);                // some() : au moins un élément vérifie la condition ? (booléen)
+users.find((u) => u.apiKey === apiKey);               // find() : le premier élément qui vérifie la condition (ou undefined)
+users.findIndex((u) => u.apiKey === apiKey);           // findIndex() : comme find(), mais retourne l'index (ou -1)
+mangas.map((m) => m.id);                               // map() : transforme chaque élément, même longueur en sortie
+mangas.slice(start, start + limit);                     // slice() : extrait une portion (pagination), sans modifier
+```
+
+`splice()` est différente des précédentes : elle **modifie le tableau en place** plutôt que d'en retourner un nouveau :
+
+```typescript
+users.splice(index, 1); // supprime 1 élément à partir de l'index donné, modifie "users" directement
+```
+
+Et trois utilitaires globaux qui reviennent souvent :
+
+```typescript
+JSON.parse(raw);                    // texte → objet JS (lecture d'un fichier .json)
+JSON.stringify(data, null, 2);      // objet JS → texte indenté (écriture d'un fichier .json)
+new Date().toISOString();           // date/heure actuelle au format standard (timestamps)
+Math.max(...mangas.map((m) => m.id)) + 1; // le plus grand id existant, +1 pour le suivant (combiné au spread `...`)
+```
+
+> Tu chercheras probablement `toUpperCase()` en te disant que ça doit forcément servir quelque part — en réalité ce cours n'utilise que `toLowerCase()` (les comparaisons se font toujours en minuscules). Le principe est le même dans les deux sens.
+
 ---
 
 ## Étapes du cours

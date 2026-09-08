@@ -40,6 +40,7 @@ Chaque étape correspond à un objectif fonctionnel. Garde cette table sous les 
 | 9 | ExceptionFilter global, messages d'erreur sécurisés |
 | 10 | @nestjs/swagger + Scalar UI |
 | 11 | Tests unitaires, e2e, couverture |
+| 12 | Observabilité (introduction — pas de TP) |
 
 ---
 
@@ -111,6 +112,8 @@ Vérifie que `npm run start:dev` répond bien sur `http://localhost:3000` avant 
 
 > 📖 [NestJS — Modules](https://docs.nestjs.com/modules) · [Rate limiting](https://docs.nestjs.com/security/rate-limiting)
 
+NestJS organise le code autour de trois briques : les **modules** (unités de découpage, un par domaine métier), les **providers** (services injectés via le constructeur — c'est l'injection de dépendances : tu ne fais jamais `new MonService()` toi-même, c'est Nest qui construit l'instance et te la fournit) et les **controllers** (point d'entrée HTTP qui délègue aux providers). Cette étape ne touche encore à aucune de ces trois briques métier : elle configure uniquement le comportement global de l'application au démarrage (bootstrap).
+
 ```bash
 npm install @nestjs/throttler
 ```
@@ -146,6 +149,8 @@ nest generate service storage/storage --flat
 ```
 
 **`src/storage/storage.module.ts`** — rends le module `@Global()` pour que `StorageService` soit injectable partout sans import explicite.
+
+> Normalement, pour injecter un provider d'un module A dans un module B, il faut explicitement `exports` côté A et `imports` côté B — c'est ce qui permet à Nest de savoir quels modules dépendent de quoi. `@Global()` est une exception volontaire à cette règle, réservée aux services vraiment transverses (stockage, config, logger) : à utiliser avec parcimonie, pas par défaut.
 
 **`src/storage/storage.service.ts`** — signatures à implémenter :
 
@@ -342,7 +347,11 @@ Codes HTTP couverts : `201`, `204`, `409`.
 
 ### Étape 5 — Guard API Key
 
-> 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators) · [Execution context](https://docs.nestjs.com/fundamentals/execution-context)
+> 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators) · [Execution context](https://docs.nestjs.com/fundamentals/execution-context) · [Authentication (recipe officielle)](https://docs.nestjs.com/security/authentication)
+
+Un **guard** est une classe qui décide, avant que le controller ne s'exécute, si la requête a le droit de continuer. C'est une préoccupation transversale (*cross-cutting concern*) : plutôt que de dupliquer une vérification dans chaque méthode de chaque controller, la logique vit à un seul endroit et s'applique globalement.
+
+Ça pose un problème : un guard global s'applique à *toutes* les routes — comment lui dire qu'une route précise (`POST /auth/register`) doit y échapper, sans que le guard connaisse explicitement cette route ? NestJS répond avec les **métadonnées** : `SetMetadata` attache une étiquette invisible sur une méthode ou une classe (au moment où le décorateur est appliqué), et `Reflector` permet de relire cette étiquette à l'exécution, depuis n'importe quel guard, sans lien direct entre le guard et le controller. C'est exactement le mécanisme utilisé par la recipe officielle *Authentication* de NestJS (lien ci-dessus) — la logique ci-dessous en est directement inspirée.
 
 ```bash
 nest generate guard common/guards/api-key --flat
@@ -421,7 +430,9 @@ Codes HTTP couverts : `201`, `204`, `409`.
 
 ### Étape 7 — Guard Admin et RBAC
 
-> 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators)
+> 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators) · [Authorization / RBAC (recipe officielle)](https://docs.nestjs.com/security/authorization)
+
+Même mécanisme métadonnées + `Reflector` qu'à l'Étape 5, appliqué cette fois à un rôle plutôt qu'à une simple autorisation binaire — c'est le pattern RBAC (*Role-Based Access Control*) documenté dans la recipe *Authorization* officielle.
 
 ```bash
 nest generate guard common/guards/admin --flat
@@ -502,6 +513,8 @@ Le `ValidationPipe` global déclenche automatiquement la validation sur tous les
 
 > 📖 [NestJS — Exception filters](https://docs.nestjs.com/exception-filters) · [Built-in HTTP exceptions](https://docs.nestjs.com/exception-filters#built-in-http-exceptions)
 
+NestJS peut tourner sur plusieurs protocoles de transport (HTTP via Express ou Fastify, WebSockets, microservices). `ArgumentsHost` est l'abstraction qui permet d'écrire un filtre une seule fois et qu'il fonctionne quel que soit le protocole sous-jacent — `host.switchToHttp()` redonne spécifiquement le `Request`/`Response` du monde HTTP.
+
 **`src/common/filters/http-exception.filter.ts`** :
 
 ```typescript
@@ -530,22 +543,28 @@ Consignes :
 
 Enregistre le filtre globalement dans `main.ts` (`app.useGlobalFilters(...)`).
 
+> **Pour aller plus loin** : ici on type directement `Request`/`Response` d'Express, ce qui est plus simple à lire et suffisant pour ce cours. Si tu voulais un filtre portable entre Express et Fastify (le filtre `@Catch()` "catch-all" présenté dans la doc officielle), il faudrait passer par `HttpAdapterHost` plutôt que par les types Express — cherche `HttpAdapterHost` dans la page Exception filters si ça t'intéresse.
+
 Codes HTTP couverts : `400`, `401`, `403`, `404`, `409`, `422`, `429`, `500`.
 
 ---
 
 ### Étape 10 — Documentation
 
-> 📖 [NestJS — OpenAPI / Swagger](https://docs.nestjs.com/openapi/introduction) · [Scalar NestJS](https://guides.scalar.com/scalar/scalar-api-references/integrations/nestjs)
+> 📖 [NestJS — OpenAPI / Swagger](https://docs.nestjs.com/openapi/introduction) · [Scalar NestJS](https://scalar.com/scalar/scalar-api-references/integrations/nestjs)
 
 ```bash
 npm install @nestjs/swagger
 npm install @scalar/nestjs-api-reference
 ```
 
-**`src/main.ts`** — construis un `DocumentBuilder` (titre, description, version, sécurité `apiKey` sur le header `X-API-Key`), génère le document avec `SwaggerModule.createDocument`, puis monte :
+**`src/main.ts`** — construis un `DocumentBuilder` (titre, description, version, sécurité `apiKey` sur le header `X-API-Key`), puis monte :
 - la spec JSON brute + une UI Swagger classique sur `api/swagger` (via `SwaggerModule.setup`)
-- l'UI Scalar sur `api/docs`, pointée vers la spec JSON (`import` dynamique de `@scalar/nestjs-api-reference`)
+- l'UI Scalar sur `api/docs`, pointée vers la spec JSON (`import` dynamique de `@scalar/nestjs-api-reference`, fonction `apiReference({ url: ... })`)
+
+> Passe le document à `SwaggerModule.setup` sous forme de **factory** (`() => SwaggerModule.createDocument(app, config)`), pas le document déjà construit — c'est le pattern recommandé par la doc actuelle : le document n'est généré qu'à la demande plutôt qu'à chaque démarrage.
+
+> **Migration `PartialType`** : à l'Étape 8 tu as installé `@nestjs/mapped-types` pour `PartialType`. Maintenant que `@nestjs/swagger` est présent, la doc recommande de faire venir `PartialType` (et `OmitType`/`PickType` si tu les utilises) de `@nestjs/swagger` à la place : il réexporte les mêmes fonctions tout en propageant aussi les `@ApiProperty` héritées, ce que `@nestjs/mapped-types` ne fait pas. Mets à jour l'import dans `update-manga.dto.ts` et tu peux désinstaller `@nestjs/mapped-types`.
 
 **Décorateurs à ajouter sur les controllers** — pattern à répliquer sur chaque route :
 
@@ -614,6 +633,26 @@ npm run test:watch    # mode watch
 npm run test:cov       # rapport de couverture → coverage/lcov-report/index.html
 npm run test:e2e       # tests e2e, données mockées
 ```
+
+---
+
+### Étape 12 — Observabilité (introduction)
+
+> 📖 [NestJS — Observability overview](https://docs.nestjs.com/observability/overview)
+
+Cette étape est **conceptuelle, pas un TP** : pas de code à écrire, pas de compte à créer.
+
+Une fois une API déployée, les logs seuls ne suffisent plus à comprendre ce qui se passe en production. L'observabilité regroupe trois piliers complémentaires :
+
+- **Logs** : événements horodatés, déjà croisés à l'Étape 9 via `Logger`.
+- **Métriques** : valeurs numériques agrégées dans le temps (compteurs de requêtes, temps de réponse moyen, taux d'erreur) — la base d'un dashboard de monitoring ou d'une alerte.
+- **Traces** : le chemin complet d'une requête à travers les différentes couches/services, avec le temps passé à chacune — utile pour repérer un goulot d'étranglement (ex : "80% du temps de réponse vient d'un appel à la base de données").
+
+NestJS propose depuis peu une plateforme officielle dédiée, **NestJS Observe**, qui instrumente automatiquement controllers/services/guards et fournit tracing distribué, métriques et error monitoring dans le vocabulaire propre à Nest (ex : `MangasService.create` plutôt que `POST /mangas`).
+
+> ⚠️ NestJS Observe est un **service tiers payant** : il faut créer un compte sur `observe.nestjs.com` et générer des clés API (`appKey`/`appSecret`), avec des paliers gratuits limités et des fonctionnalités avancées (logs, alerting, SLOs) réservées aux offres payantes. On ne le met pas en place dans ce cours — l'objectif ici est de connaître le vocabulaire et de savoir que l'option existe, pas de créer un compte sur un service commercial pendant la séance.
+
+Pour une approche libre et self-hosted, le standard du secteur reste **OpenTelemetry** (indépendant de NestJS, indépendant de tout compte) : `@opentelemetry/sdk-node` couplé à un collector (Jaeger, Grafana Tempo, etc.). Si tu veux creuser le sujet après le cours, c'est le point d'entrée à chercher.
 
 ---
 
@@ -722,4 +761,7 @@ X-API-Key: admin-manga-api-key-dev-only
 | Rate Limiting | [docs.nestjs.com/security/rate-limiting](https://docs.nestjs.com/security/rate-limiting) |
 | OpenAPI / Swagger | [docs.nestjs.com/openapi/introduction](https://docs.nestjs.com/openapi/introduction) |
 | Testing | [docs.nestjs.com/fundamentals/testing](https://docs.nestjs.com/fundamentals/testing) |
+| Authentication (recipe) | [docs.nestjs.com/security/authentication](https://docs.nestjs.com/security/authentication) |
+| Authorization / RBAC (recipe) | [docs.nestjs.com/security/authorization](https://docs.nestjs.com/security/authorization) |
+| Observability | [docs.nestjs.com/observability/overview](https://docs.nestjs.com/observability/overview) |
 | CLI | [docs.nestjs.com/cli/overview](https://docs.nestjs.com/cli/overview) |

@@ -34,11 +34,12 @@ async function bootstrap() {
     .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'api-key')
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  // Document généré via une factory : construit à la demande plutôt qu'au démarrage.
+  const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);
 
   // Spec JSON brute : GET /api/docs-json
   // UI Swagger classique (backup) : GET /api/swagger
-  SwaggerModule.setup('api/swagger', app, document, {
+  SwaggerModule.setup('api/swagger', app, documentFactory, {
     jsonDocumentUrl: 'api/docs-json',
   });
 

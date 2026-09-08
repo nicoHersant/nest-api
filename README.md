@@ -80,6 +80,89 @@ L'API sera disponible sur `http://localhost:3000/api` une fois l'Étape 1 en pla
 
 ---
 
+## Rappels techniques — Node.js / TypeScript
+
+*(≈ 30-45 min, en ouverture de séance)*
+
+Ce cours suppose une pratique de Node.js/TypeScript en entreprise, pas un cours dédié suivi en formation. Les constructions ci-dessous reviennent constamment dans le code de ce cours — si tu les reconnais déjà, passe directement à l'Étape 0.
+
+**Classes et décorateurs** — toute l'architecture NestJS repose là-dessus :
+
+```typescript
+@Injectable()
+export class ExempleService {
+  constructor(private readonly autreService: AutreService) {}
+}
+```
+
+`@Injectable()` est un **décorateur** : une fonction appliquée à une classe, qui attache une information exploitable par le framework (ici : "cette classe peut être injectée ailleurs"). Tu en croiseras beaucoup (`@Controller()`, `@Module()`, `@Get()`...). `private readonly autreService: AutreService` dans le constructeur est un raccourci TypeScript qui déclare *et* assigne la propriété en une seule ligne — équivalent à déclarer `private readonly autreService: AutreService;` puis faire `this.autreService = autreService;` dans le corps du constructeur.
+
+**Interfaces et types union** — pour typer les données métier (`Manga`, `User`...) :
+
+```typescript
+interface Manga {
+  id: number;
+  title: string;
+  genres: string[];
+  status: 'ongoing' | 'completed' | 'hiatus'; // type union : uniquement une de ces 3 valeurs
+}
+```
+
+**Génériques (`<T>`)** — une fonction/classe qui reste typée sans connaître le type à l'avance :
+
+```typescript
+function identity<T>(value: T): T {
+  return value;
+}
+const mangas = identity<Manga[]>([/* ... */]); // T devient Manga[] à l'appel
+```
+
+Tu retrouveras ce pattern dans `StorageService.read<T>(filename: string): T`.
+
+**Arrow functions** — omniprésentes, dans les callbacks comme dans les décorateurs :
+
+```typescript
+const isOngoing = (m: Manga) => m.status === 'ongoing';
+mangas.filter(isOngoing);
+```
+
+**Destructuring et spread** — extraire des champs, ou copier un objet en écrasant certaines clés :
+
+```typescript
+const { title, author } = manga;                        // destructuring
+const updated = { ...manga, status: 'completed' };       // spread : copie manga, écrase status
+```
+
+**Optional chaining et nullish coalescing** — éviter les crashs sur `undefined`/`null` :
+
+```typescript
+const page = query.page ?? 1;         // valeur par défaut seulement si null/undefined (pas si 0 ou '')
+const first = mangas[0]?.title;       // ne plante pas si mangas[0] n'existe pas, retourne undefined
+```
+
+**async/await** — toute I/O (réseau, parfois fichier) est asynchrone en Node.js :
+
+```typescript
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);  // attend la résolution de la Promise
+  await app.listen(3000);
+}
+```
+
+Une fonction `async` retourne toujours une `Promise`. `await` suspend l'exécution de *cette fonction* jusqu'à ce que la Promise se résolve, sans bloquer le reste du serveur.
+
+**Modules (import/export)** — un fichier = un module, on exporte ce qu'on veut rendre accessible ailleurs :
+
+```typescript
+// mangas.service.ts
+export class MangasService { }
+
+// mangas.controller.ts
+import { MangasService } from './mangas.service';
+```
+
+---
+
 ## Étapes du cours
 
 ---

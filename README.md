@@ -234,7 +234,7 @@ Consigne de vérification :
 
 ```bash
 npm run start:dev
-# GET http://localhost:3000/api → 404 attendu (pas encore de route déclarée)
+# GET http://localhost:3000/api -> 404 attendu (pas encore de route déclarée)
 ```
 
 ---
@@ -271,7 +271,7 @@ Consignes :
 
 > Attention **Piège NestJS — les assets ne sont pas copiés dans `dist/`** lors du build
 > Par défaut, NestJS ne copie pas les fichiers non-TypeScript lors de la compilation.
-> `__dirname` pointe vers `dist/storage/` : sans configuration, `dist/data/` n'existe pas → **erreur au premier appel qui lit un fichier**.
+> `__dirname` pointe vers `dist/storage/` : sans configuration, `dist/data/` n'existe pas -> **erreur au premier appel qui lit un fichier**.
 >
 > **Corrige tout de suite dans `nest-cli.json`** (ne remets pas ce correctif à plus tard, il doit être en place avant que tu écrives la moindre route qui lit `mangas.json` ou `users.json`) :
 
@@ -371,7 +371,7 @@ export class MangasController {
 
 Consignes :
 - `search` doit être déclarée **avant** `:id` (sinon NestJS route `search` vers le handler `:id` en pensant que c'est un id).
-- `search` lève une `BadRequestException` si `q` est vide/absent → 400.
+- `search` lève une `BadRequestException` si `q` est vide/absent -> 400.
 - `headOne` doit renvoyer un statut 200 sans body (utilise `res.status(...).send()` sans argument), et lever 404 si l'id n'existe pas.
 
 Endpoints attendus :
@@ -414,7 +414,7 @@ export class AuthService {
 ```
 
 Consignes :
-- `register` : lève une `ConflictException` si l'email existe déjà → 409. Génère un `id` et un `apiKey` avec `uuid`, rôle `user` par défaut.
+- `register` : lève une `ConflictException` si l'email existe déjà -> 409. Génère un `id` et un `apiKey` avec `uuid`, rôle `user` par défaut.
 - `getMe` : retourne l'utilisateur associé à la clef (sans exposer de champs sensibles superflus).
 - `regenerateKey` : remplace la clef existante par une nouvelle, persiste, retourne la nouvelle clef.
 - `deleteAccount` : retire l'utilisateur du fichier et persiste.
@@ -433,10 +433,10 @@ export class RegisterDto {
 ```typescript
 @Controller('auth')
 export class AuthController {
-  @Post('register')       register(@Body() body: RegisterDto) { }   // → 201
+  @Post('register')       register(@Body() body: RegisterDto) { }   // -> 201
   @Get('me')                getMe(@Request() req: ExpressRequest) { }
   @Post('regenerate-key')   regenerateKey(@Request() req: ExpressRequest) { }
-  @Delete('account')        deleteAccount(@Request() req: ExpressRequest) { }  // → 204, HttpCode explicite
+  @Delete('account')        deleteAccount(@Request() req: ExpressRequest) { }  // -> 204, HttpCode explicite
 }
 ```
 
@@ -450,15 +450,21 @@ Codes HTTP couverts : `201`, `204`, `409`.
 
 > 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators) · [Execution context](https://docs.nestjs.com/fundamentals/execution-context) · [Authentication (recipe officielle)](https://docs.nestjs.com/security/authentication)
 
-Un **guard** est une classe qui décide, avant que le controller ne s'exécute, si la requête a le droit de continuer. C'est une préoccupation transversale (*cross-cutting concern*) : plutôt que de dupliquer une vérification dans chaque méthode de chaque controller, la logique vit à un seul endroit et s'applique globalement.
+Un **guard** est une classe qui décide, avant que le controller ne s'exécute, si la requête a le droit de continuer.  
+C'est une préoccupation transversale (*cross-cutting concern*) : plutôt que de dupliquer une vérification dans chaque méthode de chaque controller, la logique vit à un seul endroit et s'applique globalement.
 
-Ça pose un problème : un guard global s'applique à *toutes* les routes — comment lui dire qu'une route précise (`POST /auth/register`) doit y échapper, sans que le guard connaisse explicitement cette route ? NestJS répond avec les **métadonnées** : `SetMetadata` attache une étiquette invisible sur une méthode ou une classe (au moment où le décorateur est appliqué), et `Reflector` permet de relire cette étiquette à l'exécution, depuis n'importe quel guard, sans lien direct entre le guard et le controller. C'est exactement le mécanisme utilisé par la recipe officielle *Authentication* de NestJS (lien ci-dessus) — la logique ci-dessous en est directement inspirée.
+Ça pose un problème : un guard global s'applique à *toutes* les routes.  
+Du coup, comment lui dire qu'une route précise (`POST /auth/register`) doit y échapper, sans que le guard connaisse explicitement cette route ?  
+NestJS répond avec les **métadonnées** :  
+`SetMetadata` attache une étiquette invisible sur une méthode ou une classe (au moment où le décorateur est appliqué),  
+`Reflector` permet de relire cette étiquette à l'exécution, depuis n'importe quel guard, sans lien direct entre le guard et le controller. C'est exactement le mécanisme utilisé par la recipe officielle *Authentication* de NestJS (lien ci-dessus) — la logique ci-dessous en est directement inspirée.
 
 ```bash
 nest generate guard common/guards/api-key --flat
 ```
 
-**`src/common/decorators/public.decorator.ts`** — décorateur qui pose une métadonnée lisible plus tard par le guard :
+**`src/common/decorators/public.decorator.ts`**  
+décorateur qui pose une métadonnée lisible plus tard par le guard :
 
 ```typescript
 export const IS_PUBLIC_KEY = 'isPublic';
@@ -481,11 +487,12 @@ export class ApiKeyGuard implements CanActivate {
 
 Consignes :
 - Lis la métadonnée `IS_PUBLIC_KEY` via `this.reflector.getAllAndOverride(...)` sur le handler et la classe. Si la route est publique, laisse passer.
-- Sinon, récupère le header `X-API-Key` de la requête. Absent → `UnauthorizedException` (401).
-- Cherche l'utilisateur correspondant via `AuthService.findByApiKey`. Introuvable → `ForbiddenException` (403).
-- Attache l'utilisateur trouvé sur la requête (`request.user = ...`) pour que les handlers suivants (et l'Étape 7) puissent le lire.
+- Sinon, récupère le header `X-API-Key` de la requête. S'il est absent alors on lève une `UnauthorizedException` (401).
+- Cherche l'utilisateur correspondant via `AuthService.findByApiKey`. si introuvable on lève une `ForbiddenException` (403).
+- Attache l'utilisateur trouvé sur la requête (`request.user = ...`) pour que les handlers suivants puissent le lire.
 
-**`src/app.module.ts`** — enregistre le guard globalement via `APP_GUARD`, **après** le `ThrottlerGuard` (l'ordre des providers `APP_GUARD` détermine l'ordre d'exécution).
+**`src/app.module.ts`** — enregistre le guard globalement via `APP_GUARD`, **après** le `ThrottlerGuard`  
+(l'ordre des providers `APP_GUARD` détermine l'ordre d'exécution).
 
 Décore `POST /auth/register` avec `@Public()` — c'est la seule route qui doit rester accessible sans clef.
 
@@ -507,10 +514,10 @@ remove(id: number): void { }
 ```
 
 Consignes :
-- `create` : refuse un titre déjà existant (comparaison insensible à la casse) → `ConflictException` (409). L'id est généré automatiquement (max des ids existants + 1).
-- `replace` : `NotFoundException` (404) si l'id n'existe pas ; tous les champs du DTO remplacent l'entrée sauf l'id, qui est conservé.
-- `update` : 404 si absent ; seuls les champs fournis dans le DTO sont modifiés (indice : l'opérateur spread `{ ...existant, ...dto }`).
-- `remove` : 404 si absent ; retire l'entrée du tableau et persiste.
+- `create` : refuse un titre déjà existant (comparaison insensible à la casse), avec `ConflictException` (409). L'id est généré automatiquement (max des ids existants + 1).
+- `replace` : `NotFoundException` (404) si l'id n'existe pas, tous les champs du DTO remplacent l'entrée sauf l'id, qui est conservé.
+- `update` : 404 si absent, seuls les champs fournis dans le DTO sont modifiés (indice : l'opérateur spread `{ ...existant, ...dto }`).
+- `remove` : 404 si absent, retire l'entrée du tableau et persiste.
 
 **`src/mangas/dto/create-manga.dto.ts`** — classe simple pour l'instant (champs visibles dans le JSON de l'Étape 2, pas de décorateurs de validation avant l'Étape 8).
 
@@ -519,17 +526,17 @@ Consignes :
 **`src/mangas/mangas.controller.ts`** — routes à ajouter :
 
 ```typescript
-@Post()          create(@Body() body: CreateMangaDto) { }               // → 201, HttpCode explicite
+@Post()          create(@Body() body: CreateMangaDto) { }               //  201, HttpCode explicite
 @Put(':id')       replace(@Param('id', ParseIntPipe) id: number, @Body() body: CreateMangaDto) { }
 @Patch(':id')     update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateMangaDto) { }
-@Delete(':id')    remove(@Param('id', ParseIntPipe) id: number) { }      // → 204, HttpCode explicite
+@Delete(':id')    remove(@Param('id', ParseIntPipe) id: number) { }      // -> 204, HttpCode explicite
 ```
 
 Codes HTTP couverts : `201`, `204`, `409`.
 
 ---
 
-### Étape 7 — Guard Admin et RBAC
+### Étape 7 — Guard Admin et gestion des roles (RBAC)
 
 > 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators) · [Authorization / RBAC (recipe officielle)](https://docs.nestjs.com/security/authorization)
 
@@ -559,7 +566,7 @@ export class AdminGuard implements CanActivate {
 
 Consignes :
 - Lis la métadonnée `IS_ADMIN_KEY`. Si la route n'est pas marquée `@AdminOnly()`, laisse passer sans vérification.
-- Sinon, lis `request.user` (garanti posé par `ApiKeyGuard`, qui s'exécute avant) et vérifie `role === 'admin'`. Sinon → `ForbiddenException` (403).
+- Sinon, lis `request.user` (garanti posé par `ApiKeyGuard`, qui s'exécute avant) et vérifie `role === 'admin'`. Sinon -> `ForbiddenException` (403).
 
 **`src/app.module.ts`** — ajoute `AdminGuard` dans les providers `APP_GUARD`, **après** `ApiKeyGuard` (il a besoin que `request.user` soit déjà posé).
 
@@ -614,7 +621,9 @@ Le `ValidationPipe` global déclenche automatiquement la validation sur tous les
 
 > 📖 [NestJS — Exception filters](https://docs.nestjs.com/exception-filters) · [Built-in HTTP exceptions](https://docs.nestjs.com/exception-filters#built-in-http-exceptions)
 
-NestJS peut tourner sur plusieurs protocoles de transport (HTTP via Express ou Fastify, WebSockets, microservices). `ArgumentsHost` est l'abstraction qui permet d'écrire un filtre une seule fois et qu'il fonctionne quel que soit le protocole sous-jacent — `host.switchToHttp()` redonne spécifiquement le `Request`/`Response` du monde HTTP.
+NestJS peut tourner sur plusieurs protocoles de transport (HTTP via Express ou Fastify, WebSockets, microservices).  
+`ArgumentsHost` est l'abstraction qui permet d'écrire un filtre une seule fois et qu'il fonctionne quel que soit le protocole sous-jacent  
+`host.switchToHttp()` redonne spécifiquement le `Request`/`Response` du monde HTTP.
 
 **`src/common/filters/http-exception.filter.ts`** :
 
@@ -644,7 +653,10 @@ Consignes :
 
 Enregistre le filtre globalement dans `main.ts` (`app.useGlobalFilters(...)`).
 
-> **Pour aller plus loin** : ici on type directement `Request`/`Response` d'Express, ce qui est plus simple à lire et suffisant pour ce cours. Si tu voulais un filtre portable entre Express et Fastify (le filtre `@Catch()` "catch-all" présenté dans la doc officielle), il faudrait passer par `HttpAdapterHost` plutôt que par les types Express — cherche `HttpAdapterHost` dans la page Exception filters si ça t'intéresse.
+> **Pour aller plus loin** : ici on type directement `Request`/`Response` d'Express, 
+> ce qui est plus simple à lire et suffisant pour ce cours. 
+> Si tu voulais un filtre portable entre Express et Fastify (le filtre `@Catch()` "catch-all" présenté dans la doc officielle), il faudrait passer par `HttpAdapterHost` plutôt que par les types Express  
+> cherche `HttpAdapterHost` dans la page Exception filters si ça t'intéresse.
 
 Codes HTTP couverts : `400`, `401`, `403`, `404`, `409`, `422`, `429`, `500`.
 
@@ -665,7 +677,10 @@ npm install @scalar/nestjs-api-reference
 
 > Passe le document à `SwaggerModule.setup` sous forme de **factory** (`() => SwaggerModule.createDocument(app, config)`), pas le document déjà construit — c'est le pattern recommandé par la doc actuelle : le document n'est généré qu'à la demande plutôt qu'à chaque démarrage.
 
-> **Migration `PartialType`** : à l'Étape 8 tu as installé `@nestjs/mapped-types` pour `PartialType`. Maintenant que `@nestjs/swagger` est présent, la doc recommande de faire venir `PartialType` (et `OmitType`/`PickType` si tu les utilises) de `@nestjs/swagger` à la place : il réexporte les mêmes fonctions tout en propageant aussi les `@ApiProperty` héritées, ce que `@nestjs/mapped-types` ne fait pas. Mets à jour l'import dans `update-manga.dto.ts` et tu peux désinstaller `@nestjs/mapped-types`.
+> **Migration `PartialType`** : à l'Étape 8 tu as installé `@nestjs/mapped-types` pour `PartialType`.  
+> Maintenant que `@nestjs/swagger` est présent, la doc recommande de faire venir `PartialType` (et `OmitType`/`PickType` si tu les utilises) de `@nestjs/swagger` à la place,  
+> il réexporte les mêmes fonctions tout en propageant aussi les `@ApiProperty` héritées, ce que `@nestjs/mapped-types` ne fait pas.  
+> Mets à jour l'import dans `update-manga.dto.ts` et tu peux désinstaller `@nestjs/mapped-types` du projet.
 
 **Décorateurs à ajouter sur les controllers** — pattern à répliquer sur chaque route :
 
@@ -731,7 +746,7 @@ Consigne pour les tests de guards/filter : mock l'`ExecutionContext`/`ArgumentsH
 ```bash
 npm test              # tous les tests unitaires
 npm run test:watch    # mode watch
-npm run test:cov       # rapport de couverture → coverage/lcov-report/index.html
+npm run test:cov       # rapport de couverture -> coverage/lcov-report/index.html
 npm run test:e2e       # tests e2e, données mockées
 ```
 
@@ -751,7 +766,7 @@ Une fois une API déployée, les logs seuls ne suffisent plus à comprendre ce q
 
 NestJS propose depuis peu une plateforme officielle dédiée, **NestJS Observe**, qui instrumente automatiquement controllers/services/guards et fournit tracing distribué, métriques et error monitoring dans le vocabulaire propre à Nest (ex : `MangasService.create` plutôt que `POST /mangas`).
 
-> ⚠️ NestJS Observe est un **service tiers payant** : il faut créer un compte sur `observe.nestjs.com` et générer des clés API (`appKey`/`appSecret`), avec des paliers gratuits limités et des fonctionnalités avancées (logs, alerting, SLOs) réservées aux offres payantes. On ne le met pas en place dans ce cours — l'objectif ici est de connaître le vocabulaire et de savoir que l'option existe, pas de créer un compte sur un service commercial pendant la séance.
+> NestJS Observe est un **service tiers payant** : il faut créer un compte sur `observe.nestjs.com` et générer des clés API (`appKey`/`appSecret`), avec des paliers gratuits limités et des fonctionnalités avancées (logs, alerting, SLOs) réservées aux offres payantes. On ne le met pas en place dans ce cours — l'objectif ici est de connaître le vocabulaire et de savoir que l'option existe, pas de créer un compte sur un service commercial pendant la séance.
 
 Pour une approche libre et self-hosted, le standard du secteur reste **OpenTelemetry** (indépendant de NestJS, indépendant de tout compte) : `@opentelemetry/sdk-node` couplé à un collector (Jaeger, Grafana Tempo, etc.). Si tu veux creuser le sujet après le cours, c'est le point d'entrée à chercher.
 
@@ -809,20 +824,20 @@ X-API-Key: admin-manga-api-key-dev-only
 
 ```
 1. POST /api/auth/register        body: { "email": "dev@example.com" }
-                                   → 201 { "apiKey": "..." }
+                                   -> 201 { "apiKey": "..." }
 
 2. Ajouter le header X-API-Key: <apiKey> à toutes les requêtes suivantes
 
-3. GET  /api/mangas                → 200 liste paginée
-4. GET  /api/mangas/search?q=ber   → 200 résultats
-5. GET  /api/mangas/1              → 200 détail
-6. HEAD /api/mangas/1              → 200 sans body
+3. GET  /api/mangas                -> 200 liste paginée
+4. GET  /api/mangas/search?q=ber   -> 200 résultats
+5. GET  /api/mangas/1              -> 200 détail
+6. HEAD /api/mangas/1              -> 200 sans body
 
 # Routes admin uniquement (utiliser X-API-Key: admin-manga-api-key-dev-only)
-7. POST   /api/mangas              body: { "title": "...", "author": "...", ... }  → 201
-8. PATCH  /api/mangas/1            body: { "status": "completed" }  → 200
-9. PUT    /api/mangas/1            body: { tous les champs }  → 200
-10. DELETE /api/mangas/1           → 204
+7. POST   /api/mangas              body: { "title": "...", "author": "...", ... }  -> 201
+8. PATCH  /api/mangas/1            body: { "status": "completed" }  -> 200
+9. PUT    /api/mangas/1            body: { tous les champs }  -> 200
+10. DELETE /api/mangas/1           -> 204
 ```
 
 ---

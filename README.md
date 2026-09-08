@@ -1,10 +1,10 @@
-# MangaAPI — Cours NestJS · M2 Ingénierie Logicielle
+# MangaAPI — Cours NestJS · Bac+3
 
 Ce cours consiste à construire une application NestJS permettant de fournir des données métier via une API REST professionnelle.
-Le README consigne chaque étape avec les commandes CLI, les extraits de code produits et les liens vers la documentation officielle NestJS.
+Le README consigne chaque étape avec les commandes CLI à exécuter, les signatures et consignes à implémenter, et les liens vers la documentation officielle NestJS.
 
-> **Dépôt de référence :** https://github.com/nicoHersant/nest-api
-> En cas de blocage, récupérer la branche de l'étape courante (voir tableau ci-dessous).
+> **Important** : ce document ne contient pas de corrections toutes faites. Chaque étape donne les signatures, les décorateurs attendus et les règles métier — à toi d'écrire le corps des méthodes.
+> En cas de blocage réel, ton formateur peut débloquer une branche de correction pendant la séance — elle n'est pas communiquée à l'avance.
 
 ---
 
@@ -22,31 +22,24 @@ Le README consigne chaque étape avec les commandes CLI, les extraits de code pr
 
 ---
 
-## Branches pédagogiques
+## Programme du cours
 
-Chaque branche est un état **stable et fonctionnel** de l'application.
+Chaque étape correspond à un objectif fonctionnel. Garde cette table sous les yeux pour savoir où tu en es — elle ne donne aucune solution, juste le plan.
 
-```bash
-git clone https://github.com/nicoHersant/nest-api.git
-cd nest-api
-git fetch origin
-git checkout step/XX-nom-etape
-npm install && npm run start:dev
-```
-
-| Branche | Contenu |
+| Étape | Contenu |
 |---|---|
-| `main` | Scaffold initial NestJS |
-| `step/01-setup` | Configuration globale : prefix, CORS, throttler, ValidationPipe |
-| `step/02-storage` | JsonStorageService + mangas.json (50 mangas) + users.json |
-| `step/03-mangas-read` | GET /mangas, GET /mangas/:id, HEAD, search, pagination |
-| `step/04-auth` | POST /auth/register, GET /auth/me, regenerate-key, delete account |
-| `step/05-api-key-guard` | Guard API key global + décorateur @Public |
-| `step/06-mangas-write` | POST / PUT / PATCH / DELETE mangas avec persistence JSON |
-| `step/07-admin-guard` | Guard admin + RBAC sur le CRUD mangas |
-| `step/08-validation` | DTOs complets, class-validator, PartialType |
-| `step/09-error-handling` | ExceptionFilter global, messages d'erreur sécurisés |
-| `step/10-documentation` | @nestjs/swagger + Scalar UI |
+| 0 | Scaffold initial NestJS |
+| 1 | Configuration globale : prefix, CORS, throttler |
+| 2 | JsonStorageService + mangas.json (50 mangas) + users.json |
+| 3 | GET /mangas, GET /mangas/:id, HEAD, search, pagination |
+| 4 | POST /auth/register, GET /auth/me, regenerate-key, delete account |
+| 5 | Guard API key global + décorateur @Public |
+| 6 | POST / PUT / PATCH / DELETE mangas avec persistence JSON |
+| 7 | Guard admin + RBAC sur le CRUD mangas |
+| 8 | DTOs complets, class-validator, PartialType, ValidationPipe |
+| 9 | ExceptionFilter global, messages d'erreur sécurisés |
+| 10 | @nestjs/swagger + Scalar UI |
+| 11 | Tests unitaires, e2e, couverture |
 
 ---
 
@@ -63,17 +56,26 @@ npm install -g @nestjs/cli
 
 ---
 
-## Installation (consultation / rattrapage)
+## Installation
+
+Tu pars d'un projet vierge, pas d'un clone : c'est le CLI qui génère la structure de départ (voir Étape 0).
 
 ```bash
-git clone https://github.com/nicoHersant/nest-api.git
-cd nest-api
-git checkout -b prenom/nom
-npm install
-npm run start:dev
+nest new manga-api --package-manager npm
+cd manga-api
+git init
 ```
 
-L'API est disponible sur `http://localhost:3000/api`
+L'API sera disponible sur `http://localhost:3000/api` une fois l'Étape 1 en place.
+
+---
+
+## Comment lire ce README
+
+- Les extraits `typescript` donnent des **signatures** (nom de classe/méthode, paramètres, décorateurs), jamais le corps d'une méthode métier.
+- Les **consignes** en français sous chaque extrait décrivent le comportement attendu : cas d'erreur, codes HTTP, règles de calcul.
+- Les commandes `nest generate` sont à taper toi-même — ne copie pas de fichier tout fait.
+- Quand un fichier n'est pas montré (ex. `*.module.ts`), c'est que le CLI le génère déjà correctement : contente-toi de brancher les bons imports.
 
 ---
 
@@ -81,7 +83,7 @@ L'API est disponible sur `http://localhost:3000/api`
 
 ---
 
-### Étape 0 — Scaffold du projet (`main`)
+### Étape 0 — Scaffold du projet
 
 > 📖 [NestJS — First steps](https://docs.nestjs.com/first-steps) · [CLI overview](https://docs.nestjs.com/cli/overview)
 
@@ -91,97 +93,50 @@ cd manga-api
 git init
 ```
 
-Le CLI génère la structure minimale :
+Structure générée par le CLI :
 
 ```
 src/
 ├── app.controller.ts   ← route GET / par défaut
 ├── app.module.ts       ← module racine
 ├── app.service.ts
-└── main.ts             ← point d'entrée, bootstrap()
+└── main.ts              ← point d'entrée, bootstrap()
 ```
 
-`main.ts` initial :
-
-```typescript
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
-}
-bootstrap();
-```
+Vérifie que `npm run start:dev` répond bien sur `http://localhost:3000` avant de continuer.
 
 ---
 
-### Étape 1 — Configuration globale (`step/01-setup`)
+### Étape 1 — Configuration globale
 
-> 📖 [NestJS — Pipes](https://docs.nestjs.com/pipes) · [Rate limiting](https://docs.nestjs.com/security/rate-limiting)
+> 📖 [NestJS — Modules](https://docs.nestjs.com/modules) · [Rate limiting](https://docs.nestjs.com/security/rate-limiting)
 
 ```bash
 npm install @nestjs/throttler
-npm install class-validator 
-npm install class-transformer
 ```
 
-**`src/main.ts`** — prefix global, CORS, ValidationPipe :
+**`src/main.ts`** — dans `bootstrap()`, avant `app.listen(...)`, ajoute dans cet ordre :
 
-```typescript
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
+- un préfixe global `api` sur toutes les routes (méthode `setGlobalPrefix`)
+- l'activation de CORS (méthode `enableCors`)
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+**`src/app.module.ts`** — enregistre `ThrottlerModule.forRoot(...)` dans les `imports` :
 
-  app.setGlobalPrefix('api');    // toutes les routes → /api/...
-  app.enableCors();
+- une fenêtre de 1 minute (`ttl`, en millisecondes)
+- une limite de 100 requêtes par IP sur cette fenêtre (`limit`)
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,            // supprime les champs non déclarés dans les DTOs
-      forbidNonWhitelisted: true, // rejette la requête si des champs inconnus sont présents
-      transform: true,            // convertit automatiquement les types (ex: "1" → 1)
-    }),
-  );
-
-  await app.listen(process.env.PORT ?? 3000);
-}
-bootstrap();
-```
-
-**`src/app.module.ts`** — ThrottlerModule (100 req/min par IP) :
-
-```typescript
-import { Module } from '@nestjs/common';
-import { ThrottlerModule } from '@nestjs/throttler';
-
-@Module({
-  imports: [
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          name: 'default',
-          ttl: 60000, // fenêtre de 1 minute en ms
-          limit: 100, // max 100 requêtes par fenêtre par IP
-        },
-      ],
-    }),
-  ],
-})
-export class AppModule {}
-```
+Consigne de vérification :
 
 ```bash
 npm run start:dev
-# GET http://localhost:3000/api → 404 attendu (pas encore de route)
+# GET http://localhost:3000/api → 404 attendu (pas encore de route déclarée)
 ```
+
+> ⚠️ Ne pose pas encore de `ValidationPipe` ici : le concept est traité à l'Étape 8, avec les paquets qui vont avec. Un `ValidationPipe` posé maintenant sans `class-validator` installé fait planter le démarrage de l'application.
 
 ---
 
-### Étape 2 — Stockage JSON (`step/02-storage`)
+### Étape 2 — Stockage JSON
 
 > 📖 [NestJS — Modules](https://docs.nestjs.com/modules) · [Providers](https://docs.nestjs.com/providers)
 
@@ -190,49 +145,29 @@ nest generate module storage
 nest generate service storage/storage --flat
 ```
 
-**`src/storage/storage.module.ts`** — module `@Global()` : injecté partout sans import explicite :
+**`src/storage/storage.module.ts`** — rends le module `@Global()` pour que `StorageService` soit injectable partout sans import explicite.
+
+**`src/storage/storage.service.ts`** — signatures à implémenter :
 
 ```typescript
-import { Module, Global } from '@nestjs/common';
-import { StorageService } from './storage.service';
-
-@Global()   // ← rend StorageService disponible dans toute l'application
-@Module({
-  providers: [StorageService],
-  exports: [StorageService],
-})
-export class StorageModule {}
-```
-
-**`src/storage/storage.service.ts`** — lecture et écriture synchrones :
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
-
 @Injectable()
 export class StorageService {
   private readonly dataDir = path.join(__dirname, '..', 'data');
 
-  read<T>(filename: string): T {
-    const filePath = path.join(this.dataDir, filename);
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(raw) as T;
-  }
-
-  write<T>(filename: string, data: T): void {
-    const filePath = path.join(this.dataDir, filename);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-  }
+  read<T>(filename: string): T { }
+  write<T>(filename: string, data: T): void { }
 }
 ```
 
+Consignes :
+- `read` : lit le fichier `filename` dans `dataDir` en synchrone et retourne le contenu parsé.
+- `write` : sérialise `data` en JSON indenté et écrit dans le fichier (aussi en synchrone).
+
 > ⚠️ **Piège NestJS — assets non copiés dans `dist/`**
 > Par défaut, NestJS ne copie pas les fichiers non-TypeScript lors de la compilation.
-> `__dirname` pointe vers `dist/storage/` : sans configuration, `dist/data/` n'existe pas → **500 au démarrage**.
+> `__dirname` pointe vers `dist/storage/` : sans configuration, `dist/data/` n'existe pas → **erreur au premier appel qui lit un fichier**.
 >
-> **Correction dans `nest-cli.json`** :
+> **Corrige tout de suite dans `nest-cli.json`** (ne remets pas ce correctif à plus tard, il doit être en place avant que tu écrives la moindre route qui lit `mangas.json` ou `users.json`) :
 
 ```json
 {
@@ -243,7 +178,7 @@ export class StorageService {
 }
 ```
 
-**`src/data/users.json`** — compte admin pré-seedé :
+**`src/data/users.json`** — crée un compte admin pré-seedé avec cette structure :
 
 ```json
 [
@@ -257,7 +192,7 @@ export class StorageService {
 ]
 ```
 
-**`src/data/mangas.json`** — structure d'une entrée (50 mangas dans le dépôt de référence) :
+**`src/data/mangas.json`** — crée un tableau d'au moins 50 entrées avec cette structure :
 
 ```json
 {
@@ -273,9 +208,11 @@ export class StorageService {
 }
 ```
 
+`status` doit être l'une des valeurs : `ongoing`, `completed`, `hiatus`.
+
 ---
 
-### Étape 3 — Lecture des mangas (`step/03-mangas-read`)
+### Étape 3 — Lecture des mangas
 
 > 📖 [NestJS — Controllers](https://docs.nestjs.com/controllers) · [Providers](https://docs.nestjs.com/providers)
 
@@ -285,83 +222,53 @@ nest generate controller mangas
 nest generate service mangas
 ```
 
-**`src/mangas/mangas.service.ts`** — logique métier de lecture :
+**`src/mangas/mangas.service.ts`** — définis une interface `Manga` (champs visibles dans le JSON de l'Étape 2), puis les signatures suivantes :
 
 ```typescript
 @Injectable()
 export class MangasService {
   constructor(private readonly storage: StorageService) {}
 
-  findAll(query: QueryMangaDto) {
-    let mangas = this.storage.read<Manga[]>('mangas.json');
-
-    if (query.genre) {
-      mangas = mangas.filter((m) =>
-        m.genres.some((g) => g.toLowerCase().includes(query.genre!.toLowerCase())),
-      );
-    }
-    if (query.status) {
-      mangas = mangas.filter((m) => m.status === query.status);
-    }
-
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
-    const start = (page - 1) * limit;
-
-    return { data: mangas.slice(start, start + limit), total: mangas.length, page, limit };
-  }
-
-  findOne(id: number): Manga {
-    const manga = this.storage.read<Manga[]>('mangas.json').find((m) => m.id === id);
-    if (!manga) throw new NotFoundException(`Manga with id ${id} not found`); // → 404
-    return manga;
-  }
-
-  search(q: string): Manga[] {
-    const term = q.toLowerCase();
-    return this.storage.read<Manga[]>('mangas.json').filter(
-      (m) =>
-        m.title.toLowerCase().includes(term) ||
-        m.author.toLowerCase().includes(term) ||
-        m.synopsis.toLowerCase().includes(term),
-    );
-  }
+  findAll(query: QueryMangaDto) { }
+  findOne(id: number): Manga { }
+  search(q: string): Manga[] { }
 }
 ```
 
-**`src/mangas/mangas.controller.ts`** — endpoints de lecture :
+Consignes :
+- `findAll` : applique les filtres `genre` (recherche insensible à la casse dans le tableau `genres`) et `status` (égalité stricte), puis pagine avec `page`/`limit` (valeurs par défaut à choisir). Retourne `{ data, total, page, limit }`.
+- `findOne` : lève une `NotFoundException` si l'id n'existe pas → 404.
+- `search` : filtre sur `title`, `author` et `synopsis`, recherche insensible à la casse.
+
+**`src/mangas/dto/query-manga.dto.ts`** — classe simple pour l'instant (pas de décorateurs de validation avant l'Étape 8) :
+
+```typescript
+export class QueryMangaDto {
+  page?: number;
+  limit?: number;
+  genre?: string;
+  status?: string;
+}
+```
+
+**`src/mangas/mangas.controller.ts`** — routes à déclarer :
 
 ```typescript
 @Controller('mangas')
 export class MangasController {
-  constructor(private readonly mangasService: MangasService) {}
-
-  @Get()
-  findAll(@Query() query: QueryMangaDto) {
-    return this.mangasService.findAll(query);
-  }
-
-  @Get('search')                         // ← déclaré AVANT :id pour éviter le conflit de routing
-  search(@Query('q') q: string) {
-    if (!q?.trim()) throw new BadRequestException('Query param "q" is required');
-    return this.mangasService.search(q.trim());
-  }
-
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {  // ParseIntPipe → 400 si non-entier
-    return this.mangasService.findOne(id);
-  }
-
-  @Head(':id')
-  @HttpCode(200)
-  headOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    this.mangasService.findOne(id); // lève 404 si absent
-    res.status(200).send();         // HEAD : statut uniquement, pas de body
-  }
+  @Get()               findAll(@Query() query: QueryMangaDto) { }
+  @Get('search')        search(@Query('q') q: string) { }
+  @Get(':id')            findOne(@Param('id', ParseIntPipe) id: number) { }
+  @Head(':id')           headOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) { }
 }
 ```
 
-Endpoints disponibles :
+Consignes :
+- `search` doit être déclarée **avant** `:id` (sinon NestJS route `search` vers le handler `:id` en pensant que c'est un id).
+- `search` lève une `BadRequestException` si `q` est vide/absent → 400.
+- `headOne` doit renvoyer un statut 200 sans body (utilise `res.status(...).send()` sans argument), et lever 404 si l'id n'existe pas.
+
+Endpoints attendus :
 
 ```
 GET  /api/mangas?page=1&limit=10&genre=Action&status=completed
@@ -374,7 +281,7 @@ Codes HTTP couverts : `200`, `400`, `404`.
 
 ---
 
-### Étape 4 — Authentification (`step/04-auth`)
+### Étape 4 — Authentification
 
 > 📖 [NestJS — Controllers](https://docs.nestjs.com/controllers) · [Exception filters](https://docs.nestjs.com/exception-filters)
 
@@ -385,83 +292,55 @@ nest generate controller auth
 nest generate service auth
 ```
 
-**`src/auth/auth.service.ts`** — création de compte et gestion de la clef :
+**`src/auth/auth.service.ts`** — signatures :
 
 ```typescript
 @Injectable()
 export class AuthService {
   constructor(private readonly storage: StorageService) {}
 
-  register(email: string): { apiKey: string } {
-    const users = this.storage.read<User[]>('users.json');
-
-    if (users.some((u) => u.email === email)) {
-      throw new ConflictException(`Email ${email} is already registered`); // → 409
-    }
-
-    const newUser: User = {
-      id: uuidv4(),
-      email,
-      role: 'user',
-      apiKey: uuidv4(),   // clef unique générée à l'inscription
-      createdAt: new Date().toISOString(),
-    };
-
-    this.storage.write('users.json', [...users, newUser]);
-    return { apiKey: newUser.apiKey };
-  }
-
-  regenerateKey(apiKey: string): { apiKey: string } {
-    const users = this.storage.read<User[]>('users.json');
-    const index = users.findIndex((u) => u.apiKey === apiKey);
-    if (index === -1) throw new NotFoundException('User not found');
-
-    const newKey = uuidv4();
-    users[index] = { ...users[index], apiKey: newKey };
-    this.storage.write('users.json', users);
-    return { apiKey: newKey };
-  }
-
-  findByApiKey(apiKey: string): User | undefined {
-    return this.storage.read<User[]>('users.json').find((u) => u.apiKey === apiKey);
-  }
+  register(email: string): { apiKey: string } { }
+  getMe(apiKey: string) { }
+  regenerateKey(apiKey: string): { apiKey: string } { }
+  deleteAccount(apiKey: string): void { }
+  findByApiKey(apiKey: string): User | undefined { }
 }
 ```
 
-**`src/auth/auth.controller.ts`** :
+Consignes :
+- `register` : lève une `ConflictException` si l'email existe déjà → 409. Génère un `id` et un `apiKey` avec `uuid`, rôle `user` par défaut.
+- `getMe` : retourne l'utilisateur associé à la clef (sans exposer de champs sensibles superflus).
+- `regenerateKey` : remplace la clef existante par une nouvelle, persiste, retourne la nouvelle clef.
+- `deleteAccount` : retire l'utilisateur du fichier et persiste.
+- `findByApiKey` : simple recherche dans le tableau — cette méthode sera réutilisée par le guard de l'Étape 5.
+
+**`src/auth/dto/register.dto.ts`** :
+
+```typescript
+export class RegisterDto {
+  email: string;
+}
+```
+
+**`src/auth/auth.controller.ts`** — routes à déclarer :
 
 ```typescript
 @Controller('auth')
 export class AuthController {
-  @Post('register')          // route publique — pas encore de guard global à cette étape
-  register(@Body() body: RegisterDto) {
-    return this.authService.register(body.email);  // → 201 { apiKey }
-  }
-
-  @Get('me')
-  getMe(@Request() req: ExpressRequest) {
-    const user = (req as any).user;                // peuplé par le guard (étape 5)
-    return this.authService.getMe(user.apiKey);    // → 200
-  }
-
-  @Post('regenerate-key')
-  regenerateKey(@Request() req: ExpressRequest) {
-    return this.authService.regenerateKey((req as any).user.apiKey); // → 200 { apiKey }
-  }
-
-  @Delete('account')
-  @HttpCode(204)
-  deleteAccount(@Request() req: ExpressRequest) {
-    this.authService.deleteAccount((req as any).user.apiKey);        // → 204
-  }
+  @Post('register')       register(@Body() body: RegisterDto) { }   // → 201
+  @Get('me')                getMe(@Request() req: ExpressRequest) { }
+  @Post('regenerate-key')   regenerateKey(@Request() req: ExpressRequest) { }
+  @Delete('account')        deleteAccount(@Request() req: ExpressRequest) { }  // → 204, HttpCode explicite
 }
 ```
+
+> À ce stade il n'y a pas encore de guard : `req.user` n'existe pas. Pour tester `getMe`/`regenerate-key`/`deleteAccount` maintenant, tu devras temporairement passer l'apiKey autrement (query param, par exemple) — ce sera remplacé proprement à l'Étape 5.
 
 Codes HTTP couverts : `201`, `204`, `409`.
 
 ---
 
-### Étape 5 — Guard API Key (`step/05-api-key-guard`)
+### Étape 5 — Guard API Key
 
 > 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators) · [Execution context](https://docs.nestjs.com/fundamentals/execution-context)
 
@@ -469,15 +348,11 @@ Codes HTTP couverts : `201`, `204`, `409`.
 nest generate guard common/guards/api-key --flat
 ```
 
-**`src/common/decorators/public.decorator.ts`** — décorateur `@Public()` :
+**`src/common/decorators/public.decorator.ts`** — décorateur qui pose une métadonnée lisible plus tard par le guard :
 
 ```typescript
-import { SetMetadata } from '@nestjs/common';
-
 export const IS_PUBLIC_KEY = 'isPublic';
-
-// Marque une route comme publique : le guard API key ne s'applique pas.
-export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+export const Public = () => /* SetMetadata(...) */;
 ```
 
 **`src/common/guards/api-key.guard.ts`** :
@@ -486,146 +361,65 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
   constructor(
-    private readonly reflector: Reflector,    // lit les métadonnées posées par @Public()
+    private readonly reflector: Reflector,
     private readonly authService: AuthService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (isPublic) return true;
-
-    const request = context.switchToHttp().getRequest<Request>();
-    const apiKey = request.headers['x-api-key'] as string | undefined;
-
-    if (!apiKey) {
-      throw new UnauthorizedException('Missing API key. Add header X-API-Key.'); // → 401
-    }
-
-    const user = this.authService.findByApiKey(apiKey);
-    if (!user) {
-      throw new ForbiddenException('Invalid API key.'); // → 403
-    }
-
-    (request as any).user = user;  // attacher l'utilisateur pour les handlers suivants
-    return true;
-  }
+  canActivate(context: ExecutionContext): boolean { }
 }
 ```
 
-**`src/app.module.ts`** — enregistrement global via `APP_GUARD` :
+Consignes :
+- Lis la métadonnée `IS_PUBLIC_KEY` via `this.reflector.getAllAndOverride(...)` sur le handler et la classe. Si la route est publique, laisse passer.
+- Sinon, récupère le header `X-API-Key` de la requête. Absent → `UnauthorizedException` (401).
+- Cherche l'utilisateur correspondant via `AuthService.findByApiKey`. Introuvable → `ForbiddenException` (403).
+- Attache l'utilisateur trouvé sur la requête (`request.user = ...`) pour que les handlers suivants (et l'Étape 7) puissent le lire.
 
-```typescript
-import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
-import { ApiKeyGuard } from './common/guards/api-key.guard';
+**`src/app.module.ts`** — enregistre le guard globalement via `APP_GUARD`, **après** le `ThrottlerGuard` (l'ordre des providers `APP_GUARD` détermine l'ordre d'exécution).
 
-@Module({
-  providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard }, // exécuté en 1er
-    { provide: APP_GUARD, useClass: ApiKeyGuard },    // exécuté en 2nd
-  ],
-})
-export class AppModule {}
-```
-
-Marquer `POST /auth/register` comme public :
-
-```typescript
-@Public()
-@Post('register')
-register(@Body() body: RegisterDto) { ... }
-```
+Décore `POST /auth/register` avec `@Public()` — c'est la seule route qui doit rester accessible sans clef.
 
 Codes HTTP couverts : `401` (clef absente), `403` (clef invalide).
 
 ---
 
-### Étape 6 — CRUD mangas avec persistence (`step/06-mangas-write`)
+### Étape 6 — CRUD mangas avec persistence
 
 > 📖 [NestJS — Controllers](https://docs.nestjs.com/controllers)
 
-**`src/mangas/mangas.service.ts`** — méthodes d'écriture :
+**`src/mangas/mangas.service.ts`** — méthodes à ajouter :
 
 ```typescript
-create(dto: CreateMangaDto): Manga {
-  const mangas = this.storage.read<Manga[]>('mangas.json');
-
-  if (mangas.some((m) => m.title.toLowerCase() === dto.title.toLowerCase())) {
-    throw new ConflictException(`A manga titled "${dto.title}" already exists`); // → 409
-  }
-
-  const nextId = Math.max(...mangas.map((m) => m.id), 0) + 1;
-  const newManga: Manga = { id: nextId, ...dto };
-
-  this.storage.write('mangas.json', [...mangas, newManga]);
-  return newManga;
-}
-
-replace(id: number, dto: CreateMangaDto): Manga {  // PUT : remplacement complet
-  const mangas = this.storage.read<Manga[]>('mangas.json');
-  const index = mangas.findIndex((m) => m.id === id);
-  if (index === -1) throw new NotFoundException(`Manga with id ${id} not found`);
-
-  const updated = { id, ...dto };    // l'id est conservé, tout le reste est remplacé
-  mangas[index] = updated;
-  this.storage.write('mangas.json', mangas);
-  return updated;
-}
-
-update(id: number, dto: UpdateMangaDto): Manga {   // PATCH : fusion partielle
-  const mangas = this.storage.read<Manga[]>('mangas.json');
-  const index = mangas.findIndex((m) => m.id === id);
-  if (index === -1) throw new NotFoundException(`Manga with id ${id} not found`);
-
-  const updated = { ...mangas[index], ...dto };    // spread : seuls les champs fournis sont modifiés
-  mangas[index] = updated;
-  this.storage.write('mangas.json', mangas);
-  return updated;
-}
-
-remove(id: number): void {
-  const mangas = this.storage.read<Manga[]>('mangas.json');
-  const index = mangas.findIndex((m) => m.id === id);
-  if (index === -1) throw new NotFoundException(`Manga with id ${id} not found`);
-  mangas.splice(index, 1);
-  this.storage.write('mangas.json', mangas);
-}
+create(dto: CreateMangaDto): Manga { }
+replace(id: number, dto: CreateMangaDto): Manga { }   // PUT — remplacement total
+update(id: number, dto: UpdateMangaDto): Manga { }    // PATCH — fusion partielle
+remove(id: number): void { }
 ```
 
-**`src/mangas/mangas.controller.ts`** — ajout des verbes d'écriture :
+Consignes :
+- `create` : refuse un titre déjà existant (comparaison insensible à la casse) → `ConflictException` (409). L'id est généré automatiquement (max des ids existants + 1).
+- `replace` : `NotFoundException` (404) si l'id n'existe pas ; tous les champs du DTO remplacent l'entrée sauf l'id, qui est conservé.
+- `update` : 404 si absent ; seuls les champs fournis dans le DTO sont modifiés (indice : l'opérateur spread `{ ...existant, ...dto }`).
+- `remove` : 404 si absent ; retire l'entrée du tableau et persiste.
+
+**`src/mangas/dto/create-manga.dto.ts`** — classe simple pour l'instant (champs visibles dans le JSON de l'Étape 2, pas de décorateurs de validation avant l'Étape 8).
+
+**`src/mangas/dto/update-manga.dto.ts`** — mêmes champs que `CreateMangaDto`, mais tous optionnels (tu peux dupliquer temporairement, `PartialType` sera introduit à l'Étape 8).
+
+**`src/mangas/mangas.controller.ts`** — routes à ajouter :
 
 ```typescript
-@Post()
-@HttpCode(201)
-create(@Body() body: CreateMangaDto) {
-  return this.mangasService.create(body);
-}
-
-@Put(':id')    // remplacement complet — body doit contenir TOUS les champs
-replace(@Param('id', ParseIntPipe) id: number, @Body() body: CreateMangaDto) {
-  return this.mangasService.replace(id, body);
-}
-
-@Patch(':id')  // mise à jour partielle — seuls les champs fournis sont modifiés
-update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateMangaDto) {
-  return this.mangasService.update(id, body);
-}
-
-@Delete(':id')
-@HttpCode(204)  // pas de body en réponse
-remove(@Param('id', ParseIntPipe) id: number) {
-  this.mangasService.remove(id);
-}
+@Post()          create(@Body() body: CreateMangaDto) { }               // → 201, HttpCode explicite
+@Put(':id')       replace(@Param('id', ParseIntPipe) id: number, @Body() body: CreateMangaDto) { }
+@Patch(':id')     update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateMangaDto) { }
+@Delete(':id')    remove(@Param('id', ParseIntPipe) id: number) { }      // → 204, HttpCode explicite
 ```
 
 Codes HTTP couverts : `201`, `204`, `409`.
 
 ---
 
-### Étape 7 — Guard Admin et RBAC (`step/07-admin-guard`)
+### Étape 7 — Guard Admin et RBAC
 
 > 📖 [NestJS — Guards](https://docs.nestjs.com/guards) · [Custom decorators](https://docs.nestjs.com/custom-decorators)
 
@@ -633,76 +427,37 @@ Codes HTTP couverts : `201`, `204`, `409`.
 nest generate guard common/guards/admin --flat
 ```
 
-**`src/common/decorators/admin.decorator.ts`** :
+**`src/common/decorators/admin.decorator.ts`** — même principe que `@Public()` :
 
 ```typescript
-import { SetMetadata } from '@nestjs/common';
-
 export const IS_ADMIN_KEY = 'isAdmin';
-export const AdminOnly = () => SetMetadata(IS_ADMIN_KEY, true);
+export const AdminOnly = () => /* SetMetadata(...) */;
 ```
 
-**`src/common/guards/admin.guard.ts`** — vérifie le rôle après `ApiKeyGuard` :
+**`src/common/guards/admin.guard.ts`** :
 
 ```typescript
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const requiresAdmin = this.reflector.getAllAndOverride<boolean>(IS_ADMIN_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    if (!requiresAdmin) return true; // route sans @AdminOnly() → laissée passer
-
-    const request = context.switchToHttp().getRequest<Request>();
-    const user = (request as any).user as User; // garanti non-null par ApiKeyGuard
-
-    if (user.role !== 'admin') {
-      throw new ForbiddenException('This action requires administrator privileges.'); // → 403
-    }
-    return true;
-  }
+  canActivate(context: ExecutionContext): boolean { }
 }
 ```
 
-**`src/app.module.ts`** — ordre des guards (important) :
+Consignes :
+- Lis la métadonnée `IS_ADMIN_KEY`. Si la route n'est pas marquée `@AdminOnly()`, laisse passer sans vérification.
+- Sinon, lis `request.user` (garanti posé par `ApiKeyGuard`, qui s'exécute avant) et vérifie `role === 'admin'`. Sinon → `ForbiddenException` (403).
 
-```typescript
-providers: [
-  { provide: APP_GUARD, useClass: ThrottlerGuard }, // 1. rate limit
-  { provide: APP_GUARD, useClass: ApiKeyGuard },    // 2. authentification (peuple req.user)
-  { provide: APP_GUARD, useClass: AdminGuard },     // 3. autorisation (lit req.user.role)
-],
-```
+**`src/app.module.ts`** — ajoute `AdminGuard` dans les providers `APP_GUARD`, **après** `ApiKeyGuard` (il a besoin que `request.user` soit déjà posé).
 
-Décorer les routes d'écriture :
-
-```typescript
-@AdminOnly()
-@Post()
-create(...) { ... }
-
-@AdminOnly()
-@Put(':id')
-replace(...) { ... }
-
-@AdminOnly()
-@Patch(':id')
-update(...) { ... }
-
-@AdminOnly()
-@Delete(':id')
-remove(...) { ... }
-```
+Décore les 4 routes d'écriture de `MangasController` (`create`, `replace`, `update`, `remove`) avec `@AdminOnly()`.
 
 Codes HTTP couverts : `403` (authentifié mais rôle insuffisant).
 
 ---
 
-### Étape 8 — Validation (`step/08-validation`)
+### Étape 8 — Validation
 
 > 📖 [NestJS — Validation](https://docs.nestjs.com/techniques/validation) · [class-validator decorators](https://github.com/typestack/class-validator#validation-decorators)
 
@@ -711,158 +466,75 @@ npm install class-validator class-transformer
 npm install @nestjs/mapped-types
 ```
 
-**`src/mangas/dto/create-manga.dto.ts`** — DTO avec décorateurs de validation :
+**`src/main.ts`** — pose maintenant le `ValidationPipe` global dans `bootstrap()`, avec ces options : `whitelist`, `forbidNonWhitelisted`, `transform` (cherche leur rôle exact dans la doc avant de deviner).
 
-```typescript
-import { IsString, IsNotEmpty, IsArray, ArrayNotEmpty,
-         IsEnum, IsInt, Min, Max, MaxLength } from 'class-validator';
+**`src/mangas/dto/create-manga.dto.ts`** — ajoute les décorateurs `class-validator` pour respecter ces contraintes :
 
-export enum MangaStatus {
-  ONGOING = 'ongoing',
-  COMPLETED = 'completed',
-  HIATUS = 'hiatus',
-}
+| Champ | Type | Contraintes |
+|---|---|---|
+| `title` | string | requis, non vide, max 200 caractères |
+| `author` | string | requis, non vide, max 200 caractères |
+| `genres` | string[] | tableau non vide, chaque élément est une string |
+| `status` | enum | une des valeurs `ongoing` / `completed` / `hiatus` |
+| `volumes` | int | minimum 1 |
+| `startYear` | int | entre 1900 et l'année courante |
+| `publisher` | string | requis, non vide, max 200 caractères |
+| `synopsis` | string | requis, non vide, max 2000 caractères |
 
-export class CreateMangaDto {
-  @IsString() @IsNotEmpty() @MaxLength(200)
-  title: string;
+**`src/mangas/dto/update-manga.dto.ts`** — remplace ta classe dupliquée de l'Étape 6 par un `extends PartialType(CreateMangaDto)`.
 
-  @IsString() @IsNotEmpty() @MaxLength(200)
-  author: string;
+**`src/mangas/dto/query-manga.dto.ts`** — ajoute la validation :
 
-  @IsArray() @ArrayNotEmpty() @IsString({ each: true })
-  genres: string[];
+| Champ | Contraintes |
+|---|---|
+| `page` | optionnel, transformé en nombre, entier ≥ 1 |
+| `limit` | optionnel, transformé en nombre, entier entre 1 et 50 |
+| `genre` | optionnel, string |
+| `status` | optionnel, une des valeurs de l'enum manga |
 
-  @IsEnum(MangaStatus, { message: 'status must be one of: ongoing, completed, hiatus' })
-  status: MangaStatus;
+> Indice : pour transformer une query string (`"1"`) en nombre, il existe un décorateur de `class-transformer` dédié — cherche-le dans la doc plutôt que de le deviner.
 
-  @IsInt() @Min(1)
-  volumes: number;
-
-  @IsInt() @Min(1900) @Max(new Date().getFullYear())
-  startYear: number;
-
-  @IsString() @IsNotEmpty() @MaxLength(200)
-  publisher: string;
-
-  @IsString() @IsNotEmpty() @MaxLength(2000)
-  synopsis: string;
-}
-```
-
-**`src/mangas/dto/update-manga.dto.ts`** — `PartialType` : tous les champs deviennent optionnels, les validateurs sont conservés :
-
-```typescript
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateMangaDto } from './create-manga.dto';
-
-export class UpdateMangaDto extends PartialType(CreateMangaDto) {}
-```
-
-**`src/mangas/dto/query-manga.dto.ts`** — query params typés avec transformation automatique :
-
-```typescript
-import { IsOptional, IsString, IsInt, Min, Max, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
-
-export class QueryMangaDto {
-  @IsOptional()
-  @Type(() => Number)  // transforme la string "1" du query param en nombre 1
-  @IsInt() @Min(1)
-  page?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt() @Min(1) @Max(50)
-  limit?: number;
-
-  @IsOptional() @IsString()
-  genre?: string;
-
-  @IsOptional() @IsEnum(MangaStatus)
-  status?: MangaStatus;
-}
-```
-
-> Le `ValidationPipe` global (configuré à l'étape 1 avec `transform: true`) déclenche automatiquement la validation sur tous les DTOs. Les erreurs produisent un `400 Bad Request` avec le détail des contraintes violées.
+Le `ValidationPipe` global déclenche automatiquement la validation sur tous les DTOs. Les erreurs produisent un `400 Bad Request` avec le détail des contraintes violées.
 
 ---
 
-### Étape 9 — Gestion des erreurs (`step/09-error-handling`)
+### Étape 9 — Gestion des erreurs
 
 > 📖 [NestJS — Exception filters](https://docs.nestjs.com/exception-filters) · [Built-in HTTP exceptions](https://docs.nestjs.com/exception-filters#built-in-http-exceptions)
 
-**`src/common/filters/http-exception.filter.ts`** — filtre catch-all :
+**`src/common/filters/http-exception.filter.ts`** :
 
 ```typescript
-@Catch()  // sans argument = capture TOUTES les exceptions (HTTP et non-HTTP)
+@Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
-
-  // l'argument host de la fonction catch() est une abstraction générique que NestJS utilise dans les filtres et interceptors.
-  // NestJS peut fonctionner sur plusieurs protocoles : HTTP, WebSockets, microservices (TCP, Redis...)
-  catch(exception: unknown, host: ArgumentsHost): void {
-    // préciser quel est le protocole de communication utilisé.
-    // ctx est une convention pour context, ici : "tout ce dont j'ai besoin pour interagir avec la requête HTTP en cours".
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
-
-    let status: number;
-    let message: string | string[];
-    let error: string;
-
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      const body = exception.getResponse();
-      // class-validator retourne ses messages dans body.message (tableau de strings)
-      message = typeof body === 'string' ? body : (body as any).message ?? exception.message;
-      error = this.statusToError(status);
-    } else {
-      // Erreur interne non anticipée
-      status = 500;
-      error = 'Internal Server Error';
-      message = 'An unexpected error occurred. Please contact support.';
-      // Détail de l'erreur loggé côté serveur uniquement — jamais exposé au client
-      this.logger.error('Unhandled exception', exception instanceof Error ? exception.stack : String(exception));
-    }
-
-    response.status(status).json({
-      statusCode: status,
-      error,
-      message,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    });
-  }
+  catch(exception: unknown, host: ArgumentsHost): void { }
 }
 ```
 
-Enregistrement dans **`src/main.ts`** :
-
-```typescript
-app.useGlobalFilters(new HttpExceptionFilter());
-```
-
-Format de réponse d'erreur uniforme :
+Consignes :
+- `@Catch()` sans argument capture toutes les exceptions, HTTP et non-HTTP.
+- Récupère `response` et `request` via `host.switchToHttp()`.
+- Si `exception instanceof HttpException` : récupère le status réel et le message (attention, `class-validator` renvoie ses messages dans un tableau — gère ce cas).
+- Sinon (erreur non anticipée) : réponds en `500`, avec un message générique — **ne jamais exposer le détail de l'erreur au client**. Log le détail réel côté serveur uniquement (`Logger`).
+- Réponds toujours au format uniforme :
 
 ```json
 {
   "statusCode": 404,
   "error": "Not Found",
-  "message": "Manga with id 999 not found",
+  "message": "...",
   "timestamp": "2026-01-01T00:00:00.000Z",
   "path": "/api/mangas/999"
 }
 ```
 
-> **Principe de sécurité** : les erreurs `5xx` ne retournent jamais les détails internes au client. Le message réel est uniquement loggé côté serveur via `this.logger.error`.
+Enregistre le filtre globalement dans `main.ts` (`app.useGlobalFilters(...)`).
 
 Codes HTTP couverts : `400`, `401`, `403`, `404`, `409`, `422`, `429`, `500`.
 
 ---
 
-### Étape 10 — Documentation (`step/10-documentation`)
+### Étape 10 — Documentation
 
 > 📖 [NestJS — OpenAPI / Swagger](https://docs.nestjs.com/openapi/introduction) · [Scalar NestJS](https://guides.scalar.com/scalar/scalar-api-references/integrations/nestjs)
 
@@ -871,77 +543,77 @@ npm install @nestjs/swagger
 npm install @scalar/nestjs-api-reference
 ```
 
-**`src/main.ts`** — configuration Swagger et montage de l'UI Scalar :
+**`src/main.ts`** — construis un `DocumentBuilder` (titre, description, version, sécurité `apiKey` sur le header `X-API-Key`), génère le document avec `SwaggerModule.createDocument`, puis monte :
+- la spec JSON brute + une UI Swagger classique sur `api/swagger` (via `SwaggerModule.setup`)
+- l'UI Scalar sur `api/docs`, pointée vers la spec JSON (`import` dynamique de `@scalar/nestjs-api-reference`)
+
+**Décorateurs à ajouter sur les controllers** — pattern à répliquer sur chaque route :
 
 ```typescript
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
-const swaggerConfig = new DocumentBuilder()
-  .setTitle('MangaAPI')
-  .setDescription('API REST professionnelle servant des données de mangas.')
-  .setVersion('1.0')
-  .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'api-key')
-  .build();
-
-const document = SwaggerModule.createDocument(app, swaggerConfig);
-
-// Spec JSON brute + UI Swagger classique (backup)
-SwaggerModule.setup('api/swagger', app, document, {
-  jsonDocumentUrl: 'api/docs-json',
-});
-
-// UI Scalar — moderne, dark mode natif, Try it out intégré
-const { apiReference } = await import('@scalar/nestjs-api-reference');
-app.use('/api/docs', apiReference({ url: '/api/docs-json' }));
-```
-
-**Décorateurs Swagger sur les controllers** :
-
-```typescript
-@ApiTags('Mangas')          // groupe les endpoints dans la doc
-@ApiSecurity('api-key')     // indique que toutes les routes nécessitent X-API-Key
+@ApiTags('Mangas')
+@ApiSecurity('api-key')
 @Controller('mangas')
 export class MangasController {
-
-  @ApiOperation({ summary: 'Liste paginée des mangas' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiResponse({ status: 200, description: 'Liste retournée avec pagination' })
-  @ApiResponse({ status: 401, description: 'Header X-API-Key absent' })
+  @ApiOperation({ summary: '...' })
+  @ApiResponse({ status: 200, description: '...' })
+  @ApiResponse({ status: 401, description: '...' })
   @Get()
-  findAll(@Query() query: QueryMangaDto) { ... }
-
-  @ApiOperation({ summary: '[Admin] Créer un manga' })
-  @ApiResponse({ status: 201, description: 'Manga créé' })
-  @ApiResponse({ status: 403, description: 'Accès réservé aux administrateurs' })
-  @ApiResponse({ status: 409, description: 'Titre déjà existant' })
-  @AdminOnly()
-  @Post()
-  @HttpCode(201)
-  create(@Body() body: CreateMangaDto) { ... }
+  findAll(@Query() query: QueryMangaDto) { }
 }
 ```
 
-**Décorateurs Swagger sur les DTOs** :
+Adapte le `summary` et les `status`/`description` de chaque `@ApiResponse` aux codes HTTP réellement couverts par la route (revois les encarts "Codes HTTP couverts" des étapes précédentes).
 
-```typescript
-export class CreateMangaDto {
-  @ApiProperty({ example: 'Berserk', maxLength: 200 })
-  @IsString() @IsNotEmpty() @MaxLength(200)
-  title: string;
+**Décorateurs à ajouter sur les DTOs** — un `@ApiProperty({...})` par champ, avec au minimum un `example` et, pour les enums, la liste `enum`.
 
-  @ApiProperty({ enum: MangaStatus, example: MangaStatus.ONGOING })
-  @IsEnum(MangaStatus)
-  status: MangaStatus;
-}
-```
-
-URLs disponibles après cette étape :
+URLs attendues une fois l'étape terminée :
 
 | URL | Contenu |
 |---|---|
 | `http://localhost:3000/api/docs` | UI Scalar (documentation interactive) |
 | `http://localhost:3000/api/docs-json` | Spec OpenAPI brute (JSON) |
 | `http://localhost:3000/api/swagger` | UI Swagger classique (backup) |
+
+---
+
+### Étape 11 — Tests
+
+> 📖 [NestJS — Testing](https://docs.nestjs.com/fundamentals/testing)
+
+Écris les tests unitaires (services, controllers, guards, filter) avec Jest et les mocks NestJS (`Test.createTestingModule`), puis un test e2e qui démarre l'application complète.
+
+Structure attendue :
+
+```
+src/
+├── app.controller.spec.ts
+├── storage/
+│   └── storage.service.spec.ts          ← read, write (fs mocké)
+├── auth/
+│   ├── auth.service.spec.ts             ← register, getMe, regenerateKey, deleteAccount, findByApiKey
+│   └── auth.controller.spec.ts          ← délégation vers AuthService
+├── mangas/
+│   ├── mangas.service.spec.ts           ← findAll, search, findOne, create, replace, update, remove
+│   └── mangas.controller.spec.ts        ← délégation + validation search
+└── common/
+    ├── guards/
+    │   ├── api-key.guard.spec.ts        ← routes publiques, 401, 403, attache req.user
+    │   └── admin.guard.spec.ts          ← @AdminOnly(), rôle user vs admin
+    └── filters/
+        └── http-exception.filter.spec.ts ← format d'erreur HTTP et non-HTTP
+
+test/
+└── app.e2e-spec.ts                      ← tests d'intégration sur toutes les routes
+```
+
+Consigne pour les tests de guards/filter : mock l'`ExecutionContext`/`ArgumentsHost` à la main plutôt que de démarrer une vraie application — c'est plus rapide et ça force à comprendre ce que NestJS injecte réellement dans ces objets.
+
+```bash
+npm test              # tous les tests unitaires
+npm run test:watch    # mode watch
+npm run test:cov       # rapport de couverture → coverage/lcov-report/index.html
+npm run test:e2e       # tests e2e, données mockées
+```
 
 ---
 
@@ -997,20 +669,20 @@ X-API-Key: admin-manga-api-key-dev-only
 
 ```
 1. POST /api/auth/register        body: { "email": "dev@example.com" }
-                                  → 201 { "apiKey": "..." }
+                                   → 201 { "apiKey": "..." }
 
 2. Ajouter le header X-API-Key: <apiKey> à toutes les requêtes suivantes
 
-3. GET  /api/mangas               → 200 liste paginée
-4. GET  /api/mangas/search?q=ber  → 200 résultats
-5. GET  /api/mangas/1             → 200 détail
-6. HEAD /api/mangas/1             → 200 sans body
+3. GET  /api/mangas                → 200 liste paginée
+4. GET  /api/mangas/search?q=ber   → 200 résultats
+5. GET  /api/mangas/1              → 200 détail
+6. HEAD /api/mangas/1              → 200 sans body
 
 # Routes admin uniquement (utiliser X-API-Key: admin-manga-api-key-dev-only)
-7. POST   /api/mangas             body: { "title": "...", "author": "...", ... }  → 201
-8. PATCH  /api/mangas/1           body: { "status": "completed" }  → 200
-9. PUT    /api/mangas/1           body: { tous les champs }  → 200
-10. DELETE /api/mangas/1          → 204
+7. POST   /api/mangas              body: { "title": "...", "author": "...", ... }  → 201
+8. PATCH  /api/mangas/1            body: { "status": "completed" }  → 200
+9. PUT    /api/mangas/1            body: { tous les champs }  → 200
+10. DELETE /api/mangas/1           → 204
 ```
 
 ---
@@ -1022,8 +694,6 @@ X-API-Key: admin-manga-api-key-dev-only
 | 200 | OK | Lecture ou mise à jour réussie |
 | 201 | Created | Ressource créée (POST) |
 | 204 | No Content | Suppression réussie (pas de body) |
-| 301 | Redirect | Redirection permanente |
-| 307 | Redirect | Redirection temporaire (maintient du verbe HTTP) |
 | 400 | Bad Request | Paramètre ou body invalide |
 | 401 | Unauthorized | Header `X-API-Key` absent |
 | 403 | Forbidden | Clef valide mais rôle insuffisant |
@@ -1051,4 +721,5 @@ X-API-Key: admin-manga-api-key-dev-only
 | Validation (class-validator) | [docs.nestjs.com/techniques/validation](https://docs.nestjs.com/techniques/validation) |
 | Rate Limiting | [docs.nestjs.com/security/rate-limiting](https://docs.nestjs.com/security/rate-limiting) |
 | OpenAPI / Swagger | [docs.nestjs.com/openapi/introduction](https://docs.nestjs.com/openapi/introduction) |
+| Testing | [docs.nestjs.com/fundamentals/testing](https://docs.nestjs.com/fundamentals/testing) |
 | CLI | [docs.nestjs.com/cli/overview](https://docs.nestjs.com/cli/overview) |

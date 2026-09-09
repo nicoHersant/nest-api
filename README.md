@@ -68,7 +68,7 @@ Installe [Postman](https://www.postman.com/downloads/) (ou une alternative équi
 
 ### Note de version
 
-Au moment d'écrire ce cours, **Node.js 24 LTS** est devenu la version LTS active (Node 22 est passée en maintenance) et **NestJS 12** est sorti. On reste volontairement sur Node 22 / NestJS 11 pour cette session : la stack a été testée de bout en bout sur ces versions, et NestJS 12 impose des contraintes de version Node plus strictes pour les générateurs du CLI (`nest generate`), ce qui aurait pu bloquer certains postes en plein cours. Rien n'empêche d'explorer la 12 après le cours — les concepts appris (modules, guards, DTOs, exception filters...) restent valables, seule la configuration change.
+**Node.js 24 LTS** est devenue la version LTS active (Node 22 est passée en maintenance) et **NestJS 12** est sorti depuis. Ce cours reste volontairement sur Node 22 / NestJS 11 : NestJS 12 impose des contraintes de version Node plus strictes pour les générateurs du CLI (`nest generate`), ce qui peut bloquer si la version installée n'est pas assez récente. Rien n'empêche d'explorer la 12 après le cours — les concepts appris (modules, guards, DTOs, exception filters...) restent valables, seule la configuration change.
 
 ---
 
@@ -210,8 +210,6 @@ JSON.stringify(data, null, 2);      // objet JS → texte indenté (écriture d'
 new Date().toISOString();           // date/heure actuelle au format standard (timestamps)
 Math.max(...mangas.map((m) => m.id)) + 1; // le plus grand id existant, +1 pour le suivant (combiné au spread `...`)
 ```
-
-> Tu chercheras probablement `toUpperCase()` en te disant que ça doit forcément servir quelque part — en réalité ce cours n'utilise que `toLowerCase()` (les comparaisons se font toujours en minuscules). Le principe est le même dans les deux sens.
 
 ---
 
